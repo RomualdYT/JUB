@@ -1,56 +1,56 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>UPC • Handsontable + Charts + Save JSON</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UPC • Handsontable + Charts + Save JSON</title>
 
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Dépendances Handsontable -->
-  <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@handsontable/pikaday@1.0.0/pikaday.min.js"></script>
+<!-- Dépendances Handsontable -->
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@handsontable/pikaday@1.0.0/pikaday.min.js"></script>
 
-  <!-- Handsontable -->
-  <link  href="https://cdn.jsdelivr.net/npm/handsontable@15.3.0/styles/handsontable.min.css" rel="stylesheet">
-  <link  href="https://cdn.jsdelivr.net/npm/handsontable@15.3.0/styles/ht-theme-main.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/handsontable@15.3.0/dist/handsontable.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/handsontable@15.3.0/languages/fr-FR.js"></script>
+<!-- Handsontable -->
+<link href="https://cdn.jsdelivr.net/npm/handsontable/styles/handsontable.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/handsontable/styles/ht-theme-main.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/handsontable@15.3.0/languages/fr-FR.js"></script>
+
+<!-- SheetJS -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+html,body{height:100%;margin:0}
+body{background:#1f2937;color:#e2e8f0}
+.side-link{position:relative}
+.side-link.active{background:#4b5563}
+.side-link.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:#8b5cf6}
+.handsontable.ht-theme-main-dark .htCore{font-size:.8rem;color:#e2e8f0}
+.round-btn{@apply flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/30 group-hover:bg-emerald-500/50}
+.pager button{padding:.25rem .6rem;border:1px solid #475569;border-radius:.25rem}
+.pager span{min-width:6rem;text-align:center;display:inline-block}
+.ht-search-result{background:#f59e0b40!important;color:#fde68a!important}
+
+/* Animation fade-in */
+@keyframes fade-in { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: none; } }
+.animate-fade-in { animation: fade-in 0.3s; transition: opacity 0.5s; }
+</style>
+
+<!-- Yjs + y-webrtc : bundles ESM prêts pour le navigateur -->
+<script type="module">
+  import * as Y from 'https://esm.sh/yjs@14.3.0';
+  import { WebrtcProvider } from 'https://esm.sh/y-webrtc@10.1.8';
+  // On expose si vous voulez déboguer dans la console
+  window.Y = Y;
+  window.WebrtcProvider = WebrtcProvider;
+</script>
 
 
-  <!-- ==== 1.  Module ESM unique : expose Y et WebrtcProvider ==== -->
-  <script type="module">
-    import * as Y from 'https://cdn.jsdelivr.net/npm/yjs@13.6.27/+esm';
-    import { WebrtcProvider } from 'https://cdn.jsdelivr.net/npm/y-webrtc@10.3.0/+esm';
-
-    /* On rend les symboles globaux pour les scripts non-module */
-    window.Y = Y;
-    window.WebrtcProvider = WebrtcProvider;
-  </script>
-
-  <!-- SheetJS -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-  <style>
-    html,body{height:100%;margin:0}
-    body{background:#1f2937;color:#e2e8f0}
-    .side-link{position:relative}
-    .side-link.active{background:#4b5563}
-    .side-link.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:#8b5cf6}
-    .handsontable.ht-theme-main-dark .htCore{font-size:.8rem;color:#e2e8f0}
-    .round-btn{@apply flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/30 group-hover:bg-emerald-500/50}
-    .pager button{padding:.25rem .6rem;border:1px solid #475569;border-radius:.25rem}
-    .pager span{min-width:6rem;text-align:center;display:inline-block}
-    .ht-search-result{background:#f59e0b40!important;color:#fde68a!important}
-
-    /* Animation fade-in */
-    @keyframes fade-in {from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:none;}}
-    .animate-fade-in{animation:fade-in .3s;transition:opacity .5s;}
-  </style>
 </head>
 <body class="flex h-full overflow-hidden">
 
@@ -264,21 +264,6 @@
 
 <!-- =======================  SCRIPT GÉNÉRAL  ======================= -->
 <script>
-/* ================== COLLAB TEMPS RÉEL (Yjs) ================== */
-// 1. document partagé + room P2P
-const ydoc     = new Y.Doc();
-const provider = new WebrtcProvider('upc-room-prod', ydoc); // change le nom !
-
-// 2. structure des données : une Y.Map (clé = n° ligne) pour le tableau Main
-const yMain = ydoc.getMap('mainRows');
-
-// 3. utilitaire : convertir Y.Map -> Array (Handsontable)
-function rowsFromYjs() {
-  const out = [];
-  yMain.forEach((val, key) => { out[Number(key)] = val; });
-  return out.filter(Boolean);
-}
-
 /* ----------  Drawer  ---------- */
 const exportBtn = document.querySelector('[data-drawer-target="drawer-export"]');
 const closeBtn  = document.querySelector('[data-drawer-hide="drawer-export"]');
@@ -561,48 +546,6 @@ const hotMain = new Handsontable(document.getElementById('hot-main'), {
   }
 });
 
-/* ----------  Synchro Handsontable <-> Yjs  ---------- */
-
-// A.  Quand l’utilisateur modifie une cellule -----------------
-hotMain.addHook('afterChange', (changes, src) => {
-  if (!changes || src === 'loadData' || src === 'remote') return;  // ignore boucles
-  ydoc.transact(() => {
-    const full = hotMain.getSourceData();          // on renvoie l’état complet (simple)
-    yMain.clear();                                 // vide la map
-    full.forEach((row, i) => yMain.set(String(i), row));
-  });
-});
-
-// B.  Quand Yjs reçoit un patch distant -----------------------
-yMain.observe(event => {
-  // 1. met à jour silencieusement la valeur de chaque cellule changée
-  event.changes.keys.forEach((_, key) => {
-    const row = Number(key);
-    const data = yMain.get(key);
-    Object.keys(data).forEach(prop => {
-      const colIndex = hotMain.propToCol(prop);
-      if (colIndex != null) hotMain.setDataAtCell(row, colIndex, data[prop], 'remote');
-    });
-  });
-  // 2. si la table était vide chez ce client (première connexion) -> loadData complet
-  if (!hotMain.countRows()) {
-    hotMain.loadData(rowsFromYjs(), 'remote');
-    applyFlags(hotMain);
-  }
-});
-
-// C.  Première synchronisation --------------------------------
-if (!yMain.size) {                         // premier arrivé : pousse sa table
-  yMain.observeDeep(() => {});             // force la création du doc sur peers
-  ydoc.transact(() => {
-    hotMain.getSourceData().forEach((r, i) => yMain.set(String(i), r));
-  });
-} else {                                   // déjà des données -> on les charge
-  hotMain.loadData(rowsFromYjs(), 'remote');
-  applyFlags(hotMain);
-}
-
-
 const hdrRet = [
   'Dates','Parties','Juridiction','Numéro de l\'affaire','Numéro de l\'ordonnance',
   'Sujet 1','Règle/ Article 1','Legal Text 1','Apport 1',
@@ -806,12 +749,6 @@ function parseFile(file, tbl) {
     showToast(`Import réussi : ${label}`, "success");
   };
   fr.readAsArrayBuffer(file);
-  if (tbl === 'main') {
-  ydoc.transact(() => {
-    yMain.clear();
-    arr.forEach((row, i) => yMain.set(String(i), row));
-  });
-}
 }
 [['file-main','main'],['file-retained','retained'],['file-excluded','excluded']]
   .forEach(([id, tbl]) => {
@@ -922,12 +859,6 @@ document.getElementById('json-file-input').addEventListener('change', e=>{
       }, 100);
 
       infoElt.textContent = 'Sauvegarde chargée : ' + new Date().toLocaleString();
-	  if (tbl === 'main') {
-  ydoc.transact(() => {
-    yMain.clear();
-    arr.forEach((row, i) => yMain.set(String(i), row));
-  });
-}
       showToast("Sauvegarde chargée avec succès !", "success");
     } catch {
       alert('Fichier JSON invalide');
@@ -1158,6 +1089,55 @@ document.querySelectorAll('#export-form input, #export-form select').forEach(e =
   e.addEventListener('input', updateExportSummary);
 });
 updateExportSummary();
+</script>
+<script type="module">
+  import * as Y from 'https://esm.sh/yjs@14.3.0';
+  import { WebrtcProvider } from 'https://esm.sh/y-webrtc@10.1.8';
+
+  // Nom unique de la « salle » : changez-le si vous voulez plusieurs tableaux distincts
+  const ROOM = 'upc-handsontable-main';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // On vérifie que Handsontable est déjà instancié
+    if (!window.hotMain || !window.store || !window.loadTable) {
+      console.error('Handsontable n’est pas encore prêt pour Yjs');
+      return;
+    }
+
+    /* -------- 1.    Instanciation Yjs + WebRTC ---------- */
+    const ydoc      = new Y.Doc();
+    const provider  = new WebrtcProvider(ROOM, ydoc);      // signalisation via les serveurs publics y-webrtc
+    const yRows     = ydoc.getArray('rows');               // CRDT qui contiendra notre tableau complet
+
+    /* -------- 2.    Premier client : pousse ses données initiales -------- */
+    if (yRows.length === 0 && window.store.main.length) {
+      yRows.push([window.store.main]);                     // structure : [ [ rows ] ]
+    }
+
+    let suppress = false;                                  // évite la boucle locale <-> distante
+
+    /* -------- 3.    Réception : yjs → Handsontable ------ */
+    yRows.observeDeep(() => {
+      if (suppress) return;
+      suppress = true;
+      const remote = yRows.get(0) || [];
+      loadTable('main', remote);                           // votre helper existant
+      suppress = false;
+    });
+
+    /* -------- 4.    Émission : Handsontable → yjs ------- */
+    hotMain.addHook('afterChange', (changes, source) => {
+      if (source === 'loadData' || suppress) return;
+      suppress = true;
+      ydoc.transact(() => {
+        yRows.delete(0, yRows.length);                     // supprime tout (1 item)
+        yRows.insert(0, [window.store.main]);              // renvoie l'état à jour
+      });
+      suppress = false;
+    });
+
+    console.info('✅ Yjs + y-webrtc initialisés (room :', ROOM, ')');
+  });
 </script>
 
 </body>
