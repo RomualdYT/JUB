@@ -1084,28 +1084,24 @@ updateExportSummary();
 <script type="importmap">
 {
   "imports": {
-    "yjs": "https://cdn.jsdelivr.net/npm/yjs@13.6.27/dist/yjs.mjs"
+    "yjs": "https://esm.sh/yjs@13.6.27"          /* 1 seule copie, ESM pur */
   }
 }
 </script>
 
-<!-- --- Collaboration temps-réel : Yjs + y-webrtc --- -->
-<!-- 2️⃣  Yjs + y-webrtc – AUCUN doublon -->
-<script type="module">
-  /* =====  Import dé-dupliqué  ===== */
-  import * as Y from 'yjs';   // ← résout vers l’URL fixée dans l’import-map
-  import {
-    WebrtcProvider
-  } from 'https://cdn.jsdelivr.net/npm/y-webrtc@10.3.0/dist/y-webrtc.mjs';
-  // y-webrtc fait lui-même `import "yjs"` → même instance que ci-dessus 👆
 
-  /* =====  Branche Handsontable ↔ Yjs  ===== */
+<script type="module">
+  import * as Y from 'yjs';   // ← résout via l’import-map
+  import { WebrtcProvider }
+    from 'https://esm.sh/y-webrtc@10.3.0?external=yjs';
+
+  /* === Liaison Yjs ↔ Handsontable === */
   const ROOM = 'upc-handsontable-main';
   document.addEventListener('DOMContentLoaded', () => {
     if (!window.hotMain || !window.store || !window.loadTable) return;
 
     const ydoc     = new Y.Doc();
-    const provider = new WebrtcProvider(ROOM, ydoc, {
+    new WebrtcProvider(ROOM, ydoc, {
       signaling: [
         'wss://signaling.yjs.dev',
         'wss://y-webrtc-signaling-eu.herokuapp.com',
@@ -1114,10 +1110,12 @@ updateExportSummary();
     });
     const yRows = ydoc.getArray('rows');
 
+    /* premier arrivant → pousse ses données */
     if (yRows.length === 0 && window.store.main.length) {
       yRows.push([structuredClone(window.store.main)]);
     }
 
+    /* Yjs → HOT */
     let mute = false;
     yRows.observeDeep(() => {
       if (mute) return;
@@ -1126,8 +1124,9 @@ updateExportSummary();
       mute = false;
     });
 
-    hotMain.addHook('afterChange', (changes, source) => {
-      if (source === 'loadData' || mute) return;
+    /* HOT → Yjs */
+    hotMain.addHook('afterChange', (_c, src) => {
+      if (src === 'loadData' || mute) return;
       mute = true;
       ydoc.transact(() => {
         yRows.delete(0, yRows.length);
@@ -1136,9 +1135,10 @@ updateExportSummary();
       mute = false;
     });
 
-    console.info('✅ Yjs + y-webrtc prêt (aucun doublon)');
+    console.info('✅ Yjs + y-webrtc initialisés sans doublon');
   });
 </script>
+
 
 
 </body>
