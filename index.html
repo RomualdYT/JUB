@@ -1091,32 +1091,31 @@ updateExportSummary();
 
 
 
+<!-- ② Yjs + y-webrtc – aucune duplication -->
 <script type="module">
-  import * as Y from 'yjs';   // ← résout via l’import-map
+  import * as Y from 'yjs';   // ← résout via l’import-map ci-dessus
   import { WebrtcProvider }
-    from 'https://esm.sh/y-webrtc@10.3.0?external=yjs';
+    from 'https://cdn.jsdelivr.net/npm/y-webrtc@10.3.0/dist/y-webrtc.mjs';
 
-  /* === Liaison Yjs ↔ Handsontable === */
-  const ROOM = 'upc-handsontable-main';
+  const ROOM = 'upc-handsontable-main';        // changez si besoin
+
   document.addEventListener('DOMContentLoaded', () => {
     if (!window.hotMain || !window.store || !window.loadTable) return;
 
     const ydoc     = new Y.Doc();
-    new WebrtcProvider(ROOM, ydoc, {
-      signaling: [
-        'wss://signaling.yjs.dev',
-        'wss://y-webrtc-signaling-eu.herokuapp.com',
-        'wss://y-webrtc-signaling-us.herokuapp.com'
-      ]
+    new WebrtcProvider(ROOM, ydoc, {            // pas besoin d’options exotiques
+      maxConns: 20,
+      filterBcConns: true
     });
+
     const yRows = ydoc.getArray('rows');
 
-    /* premier arrivant → pousse ses données */
+    /* ----------  1er client : charge ses données  ---------- */
     if (yRows.length === 0 && window.store.main.length) {
       yRows.push([structuredClone(window.store.main)]);
     }
 
-    /* Yjs → HOT */
+    /* ----------  Sync Yjs → Handsontable  ---------- */
     let mute = false;
     yRows.observeDeep(() => {
       if (mute) return;
@@ -1125,8 +1124,8 @@ updateExportSummary();
       mute = false;
     });
 
-    /* HOT → Yjs */
-    hotMain.addHook('afterChange', (_c, src) => {
+    /* ----------  Sync Handsontable → Yjs  ---------- */
+    hotMain.addHook('afterChange', (chg, src) => {
       if (src === 'loadData' || mute) return;
       mute = true;
       ydoc.transact(() => {
@@ -1139,6 +1138,7 @@ updateExportSummary();
     console.info('✅ Yjs + y-webrtc initialisés sans doublon');
   });
 </script>
+
 
 
 
