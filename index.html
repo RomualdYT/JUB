@@ -774,6 +774,12 @@ function parseFile(file, tbl) {
     }
 
     loadTable(tbl, arr);
+
+// Dès que le tableau est chargé côté client, on pousse tout dans Firestore
+if (window.syncTableToFirebase) {
+ window.syncTableToFirebase(tbl);
+}
+
     // Toast selon le tableau importé
     let label = "tableau";
     if (tbl === "main") label = "Décisions JUB";
@@ -873,6 +879,9 @@ document.getElementById('json-file-input').addEventListener('change', e=>{
       const data = JSON.parse(ev.target.result);
       ['main','retained','excluded'].forEach(k=>{
         if(Array.isArray(data[k])) loadTable(k,data[k]);
+		if (window.syncTableToFirebase) {
+           window.syncTableToFirebase(k);
+         }
       });
 
       // Fonction pour restaurer les commentaires
@@ -940,59 +949,145 @@ function clearComments(hot) {
 </script>
 
 <script type="module">
-  // On récupère les objets Firebase déjà initialisés en head
-  import { doc, onSnapshot, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+  import {
+    doc,
+    collection,
+    onSnapshot,
+    writeBatch,
+    getDocs,
+    setDoc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
-  // runRealtime() a été défini lors de l’auth anonyme dans le script précédent
-  // Il faut simplement redéfinir son corps ici
+  // --- 1) runRealtime() « écoute » chaque sous‐collection rows ---
   window.runRealtime = function() {
-    // -----------------------------------------------------
-    // Fonction qui lie un Handsontable à un document Firestore
-    // -----------------------------------------------------
-    function bindTable(hotInstance, tableKey) {
-      // Référence au document “tables/{tableKey}”
-      const docRef = doc(db, "tables", tableKey);
+    ["main", "retained", "excluded"].forEach(tbl => {
+      const colRef = collection(db, "tables", tbl, "rows");
       let echo = false;
 
-      // 1) Quand Firestore émet un changement distant
-      onSnapshot(docRef, snapshot => {
-        if (!snapshot.exists()) return;
-        const data = snapshot.data().rows || [];
-        echo = true;                     // on sait que la maj vient de Firestore
-        loadTable(tableKey, data);       // votre helper existant pour recharger le tableau
+      onSnapshot(colRef, snapshot => {
+        // Reconstruire rows[] à partir de chaque doc
+        const rows = [];
+        snapshot.docs.forEach(docSnap => {
+          const idx = Number(docSnap.id);
+          rows[idx] = docSnap.data();
+        });
+        echo = true;
+        loadTable(tbl, rows);
       });
 
-      // 2) Quand l’utilisateur édite quelque chose
-      hotInstance.addHook("afterChange", (changes, source) => {
-        // On ne push pas si ça vient de loadTable (pour éviter boucle infinie)
+      const hotInstance = tbl === "main"
+        ? hotMain
+        : tbl === "retained"
+          ? hotRetained
+          : hotExcluded;
+
+      hotInstance.addHook("afterChange", async (changes, source) => {
         if (source === "loadData" || echo) {
           echo = false;
           return;
         }
-        // Variante « full replace » : on réécrit tout le tableau
-        const allData = hotInstance.getSourceData();
+        // Écrire en batch toutes les lignes modifiées
+        let batch      = writeBatch(db);
+        let operations = 0;
 
-        // Écriture dans Firestore { rows: [...], updatedAt: TIMESTAMP }
-        setDoc(docRef, {
-          rows: allData,
-          updatedAt: serverTimestamp()
-        }).catch(err => console.error("Erreur écriture Firestore :", err));
+        changes.forEach(([rowIndex, prop, oldVal, newVal]) => {
+          const rowData = hotInstance.getSourceDataAtRow(hotInstance.toPhysicalRow(rowIndex));
+          const rowRef  = doc(db, "tables", tbl, "rows", String(rowIndex));
+          batch.set(rowRef, rowData, { merge: true });
+          operations++;
+          if (operations >= 450) {
+            batch.commit().catch(err => {
+              console.error("Erreur écriture Firestore (afterChange) :", err);
+            });
+            batch      = writeBatch(db);
+            operations = 0;
+          }
+        });
+
+        // Mettre à jour un champ updatedAt sur le doc principal (optionnel)
+        const metaRef = doc(db, "tables", tbl);
+        batch.set(metaRef, { updatedAt: serverTimestamp() }, { merge: true });
+
+        await batch.commit().catch(err => {
+          console.error("Erreur écriture Firestore (afterChange) :", err);
+        });
       });
-    }
-
-    // -----------------------------------------------------
-    // On appelle bindTable() pour chacune de vos tables Handsontable
-    // -----------------------------------------------------
-    bindTable(hotMain    , "main");
-    bindTable(hotRetained, "retained");
-    bindTable(hotExcluded, "excluded");
+    });
   };
 
-  // Si l’auth est déjà loguée (cache du navigateur), on lance directement
+  // --- 2) syncTableToFirebase(tbl) « écrase » entièrement la sous‐collection rows ---
+  window.syncTableToFirebase = async function(tbl) {
+    try {
+      console.log(`🚀 Début synchronisation Firestore pour "${tbl}"…`);
+      const colRef = collection(db, "tables", tbl, "rows");
+
+      // 1) Lecture de tous les docs existants
+      const snapshot = await getDocs(colRef);
+      const allDocs   = snapshot.docs; // Array<DocumentSnapshot>
+
+      // Paramètres de découpe
+      const chunkSizeDelete = 100; // max opérations suppression par batch
+      const chunkSizeWrite  = 100; // max opérations écriture par batch
+
+      // 2) Suppression des documents existants par chunks
+      console.log(`✂️  Suppression des ${allDocs.length} anciens docs en chunks de ${chunkSizeDelete}…`);
+      let batch = writeBatch(db);
+      let ops   = 0;
+
+      for (let i = 0; i < allDocs.length; i++) {
+        const docId = allDocs[i].id;
+        batch.delete(doc(db, "tables", tbl, "rows", docId));
+        ops++;
+        if (ops >= chunkSizeDelete) {
+          await batch.commit();
+          batch = writeBatch(db);
+          ops   = 0;
+        }
+      }
+      if (ops > 0) {
+        await batch.commit();
+      }
+      console.log(`✅ Suppression terminée pour "${tbl}".`);
+
+      // 3) Écriture des nouvelles lignes (store[tbl])
+      const allRows = store[tbl] || [];
+      console.log(`✍️  Écriture des ${allRows.length} nouvelles lignes en chunks de ${chunkSizeWrite}…`);
+
+      batch = writeBatch(db);
+      ops   = 0;
+      for (let idx = 0; idx < allRows.length; idx++) {
+        const rowData = allRows[idx];
+        const rowRef  = doc(db, "tables", tbl, "rows", String(idx));
+        batch.set(rowRef, rowData);
+
+        ops++;
+        if (ops >= chunkSizeWrite) {
+          await batch.commit();
+          batch = writeBatch(db);
+          ops   = 0;
+        }
+      }
+      if (ops > 0) {
+        await batch.commit();
+      }
+      console.log(`✅ Écriture terminée pour "${tbl}".`);
+
+      console.log(`🎉 Synchronisation Firestore réussie pour "${tbl}" (${allRows.length} lignes).`);
+    } catch (err) {
+      console.error("❌ Erreur de synchronisation Firebase :", err);
+    }
+  };
+
+  // --- 3) Au cas où l’auth est déjà active ---
   if (auth.currentUser) {
-    runRealtime();
+    window.runRealtime();
   }
 </script>
+
+
+
+
 
 
 <!-- =======================  EXPORT DOCX (MODULE)  ======================= -->
