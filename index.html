@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UPC • Handsontable + Charts + Save JSON</title>
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Dépendances Handsontable -->
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@handsontable/pikaday@1.0.0/pikaday.min.js"></script>
+
+<!-- Handsontable -->
+<link href="https://cdn.jsdelivr.net/npm/handsontable/styles/handsontable.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/handsontable/styles/ht-theme-main.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/handsontable@15.3.0/languages/fr-FR.js"></script>
+
+<script src="
+https://cdn.jsdelivr.net/npm/yjs@13.6.27/src/types/YXmlHook.min.js
+"></script>
+<script src="https://cdn.jsdelivr.net/npm/y-webrtc@10/dist/y-webrtc.js"></script>
+
+<!-- SheetJS -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+html,body{height:100%;margin:0}
+body{background:#1f2937;color:#e2e8f0}
+.side-link{position:relative}
+.side-link.active{background:#4b5563}
+.side-link.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:#8b5cf6}
+.handsontable.ht-theme-main-dark .htCore{font-size:.8rem;color:#e2e8f0}
+.round-btn{@apply flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/30 group-hover:bg-emerald-500/50}
+.pager button{padding:.25rem .6rem;border:1px solid #475569;border-radius:.25rem}
+.pager span{min-width:6rem;text-align:center;display:inline-block}
+.ht-search-result{background:#f59e0b40!important;color:#fde68a!important}
+
+/* Animation fade-in */
+@keyframes fade-in { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: none; } }
+.animate-fade-in { animation: fade-in 0.3s; transition: opacity 0.5s; }
+</style>
+</head>
+<body class="flex h-full overflow-hidden">
+
+<!-- ===============  SIDEBAR  =============== -->
+<aside id="sidebar" class="flex flex-col items-center w-40 h-full text-gray-300 bg-gradient-to-b from-gray-800 via-gray-700 to-gray-800 border-r border-gray-600 rounded pt-6">
+<div class="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+  Rémus
+</div>
+<hr class="border-gray-600 mb-4 w-4/5 mx-auto opacity-40">  <div class="w-full px-2">
+    <div class="flex flex-col items-center w-full space-y-2">
+      <a href="#" data-page="home"     class="side-link active flex items-center w-full h-12 px-3 rounded hover:bg-gray-600 hover:text-white">
+        <!-- Accueil -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12.75L12 3.75l9.75 9-1.5 1.5V19.5a1.5 1.5 0 01-1.5 1.5h-3.75a.75.75 0 01-.75-.75v-3.75a.75.75 0 00-.75-.75h-1.5a.75.75 0 00-.75.75v3.75a.75.75 0 01-.75.75H5.25a1.5 1.5 0 01-1.5-1.5v-5.25l-1.5-1.5z"/>
+</svg>
+        <span class="ml-2 text-sm font-medium">Accueil</span>
+      </a>
+      <a href="#" data-page="main"     class="side-link flex items-center w-full h-12 px-3 rounded hover:bg-gray-600 hover:text-white">
+        <!-- Toutes les décisions -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+        </svg>
+        <span class="ml-2 text-sm font-medium">Toutes les décisions</span>
+      </a>
+      <a href="#" data-page="retained" class="side-link flex items-center w-full h-12 px-3 rounded hover:bg-gray-600 hover:text-white">
+        <!-- Retenues -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        <span class="ml-2 text-sm font-medium">Décisions retenues</span>
+      </a>
+      <a href="#" data-page="excluded" class="side-link flex items-center w-full h-12 px-3 rounded hover:bg-gray-600 hover:text-white">
+        <!-- Exclues -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+        <span class="ml-2 text-sm font-medium">Décisions exclues</span>
+      </a>
+    </div>
+  </div>
+</aside>
+
+<!-- ===============  MAIN AREA  =============== -->
+<div class="flex-1 flex flex-col overflow-hidden">
+<header class="h-16 px-8 flex items-center border-b border-gray-600">
+  <h1 id="page-title" class="text-2xl font-bold text-rose-400">Accueil</h1>
+</header>
+<main class="flex-1 overflow-auto">
+
+<!-- =========  PAGE ACCUEIL  ========= -->
+<section id="page-home" class="p-6 space-y-8">
+
+  <!-- Import / Sauvegarde -->
+  <div class="bg-gray-700 p-6 rounded-lg shadow">
+    <h2 class="text-xl font-semibold text-white">Importer les décisions</h2>
+    <p class="text-gray-300 mt-2">Importez vos classeurs ou rechargez une sauvegarde.</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-4">
+      <label class="group flex flex-col items-center justify-center h-44 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-400 hover:from-emerald-500 hover:to-emerald-300 cursor-pointer">
+        <span class="round-btn">M</span><span class="mt-4 font-medium text-white">Décisions JUB</span>
+        <input id="file-main" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+      </label>
+      <label class="group flex flex-col items-center justify-center h-44 rounded-xl bg-gradient-to-br from-amber-600 to-amber-400 hover:from-amber-500 hover:to-amber-300 cursor-pointer">
+        <span class="round-btn">R</span><span class="mt-4 font-medium text-white">Décisions retenues</span>
+        <input id="file-retained" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+      </label>
+      <label class="group flex flex-col items-center justify-center h-44 rounded-xl bg-gradient-to-br from-rose-600 to-rose-400 hover:from-rose-500 hover:to-rose-300 cursor-pointer">
+        <span class="round-btn">E</span><span class="mt-4 font-medium text-white">Décisions exclues</span>
+        <input id="file-excluded" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+      </label>
+    </div>
+
+    <!-- Boutons sauvegarde / chargement -->
+    <div class="flex flex-wrap items-center gap-4 mt-6">
+      <button id="btn-save-json" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded">
+        Sauvegarder dans le dossier
+      </button>
+      <button id="btn-load-json" class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded">
+        Charger sauvegarde JSON
+      </button>
+      <input type="file" id="json-file-input" accept=".json" class="hidden">
+      <span id="json-info" class="text-sm text-gray-400"></span>
+    </div>
+  </div>
+
+  <!-- Statistics -->
+  <div id="stats-cards" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div id="card-total" class="bg-gray-700 p-4 rounded-lg shadow">
+      <h3 class="text-gray-300">Total des décisions</h3>
+      <p id="stat-total" class="mt-2 text-3xl font-bold text-white">0</p>
+    </div>
+    <div id="card-jur" class="bg-gray-700 p-4 rounded-lg shadow overflow-auto max-h-40">
+      <h3 class="text-gray-300">Par juridiction</h3>
+      <ul id="stat-jur" class="mt-2 text-white list-disc list-inside space-y-1"></ul>
+    </div>
+    <div id="card-year" class="bg-gray-700 p-4 rounded-lg shadow overflow-auto max-h-40">
+      <h3 class="text-gray-300">Par année (3 dernières)</h3>
+      <ul id="stat-year" class="mt-2 text-white list-disc list-inside space-y-1"></ul>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div class="bg-gray-700 p-4 rounded-lg shadow">
+      <h3 class="text-gray-300 mb-2">Décisions par juridiction</h3>
+      <canvas id="chart-jurisdictions" class="h-60"></canvas>
+    </div>
+    <div class="bg-gray-700 p-4 rounded-lg shadow">
+      <h3 class="text-gray-300 mb-2">Décisions par mois et juridiction</h3>
+      <canvas id="chart-monthly"></canvas>
+    </div>
+  </div>
+
+</section>
+
+<!-- =========  TABLES (MAIN / RETAINED / EXCLUDED)  ========= -->
+<section id="page-main" class="hidden p-6 space-y-2">
+  <div class="flex items-center gap-2">
+    <input id="search-main" placeholder="Rechercher…" class="px-2 py-1 rounded bg-gray-700 text-gray-200 w-60 focus:ring-amber-400 focus:border-amber-400">
+    <span id="count-main" class="text-sm text-gray-300"></span>
+  </div>
+  <div id="hot-main" class="ht-theme-main-dark w-full" style="height:500px;z-index:0"></div>
+  <div id="pager-main" class="pager mt-2 flex items-center gap-4"></div>
+</section>
+
+<section id="page-retained" class="hidden p-6 space-y-3">
+  <div class="flex items-center gap-2">
+    <input id="search-retained" placeholder="Rechercher…" class="px-2 py-1 rounded bg-gray-700 text-gray-200 w-60 focus:ring-emerald-400 focus:border-emerald-400">
+    <span id="count-retained" class="text-sm text-gray-300"></span>
+    <button data-drawer-target="drawer-export" class="ml-auto px-4 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded">Exporter .docx</button>
+  </div>
+  <div id="hot-retained" class="ht-theme-main-dark w-full" style="height:500px;z-index:0"></div>
+  <div id="pager-retained" class="pager mt-2 flex items-center gap-4"></div>
+</section>
+
+<section id="page-excluded" class="hidden p-6 space-y-2">
+  <div class="flex items-center gap-2">
+    <input id="search-excluded" placeholder="Rechercher…" class="px-2 py-1 rounded bg-gray-700 text-gray-200 w-60 focus:ring-rose-400 focus:border-rose-400">
+    <span id="count-excluded" class="text-sm text-gray-300"></span>
+  </div>
+  <div id="hot-excluded" class="ht-theme-main-dark w-full" style="height:500px;z-index:0"></div>
+  <div id="pager-excluded" class="pager mt-2 flex items-center gap-4"></div>
+</section>
+
+</main>
+</div>
+
+<!-- ===============  DRAWER EXPORT DOCX  =============== -->
+<div id="drawer-export" class="fixed top-0 right-0 z-50 h-full w-80 p-6 bg-gray-800 shadow-2xl transition-transform duration-300 transform translate-x-full overflow-auto rounded-l-xl border-l-4 border-gray-700">
+  <h5 class="text-base font-semibold text-white uppercase mb-4 flex items-center gap-2">
+    <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+    </svg>
+    RÉALISER UN EXPORT DES DÉCISIONS JUB
+  </h5>
+  <div id="export-summary" class="bg-amber-900/30 text-amber-200 rounded px-3 py-2 mb-4 text-sm font-medium shadow"></div>
+  <hr class="my-4 border-gray-700">
+
+  <button type="button" data-drawer-hide="drawer-export" class="absolute top-4 right-4 text-gray-300 hover:text-white">
+    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+  </button>
+
+  <!-- formulaire export -->
+  <form id="export-form" class="space-y-4">
+    <div class="bg-gray-700 rounded-lg p-4 shadow mb-2">
+      <label for="export-filename" class="block text-sm font-semibold text-amber-300 mb-1">Nom du fichier</label>
+      <input type="text" id="export-filename" class="w-full px-3 py-2 bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition placeholder:text-gray-400" placeholder="Nom du fichier">
+    </div>
+    <div class="bg-gray-700 rounded-lg p-4 shadow mb-2">
+      <span class="block text-sm font-semibold text-amber-300 mb-2">Période de l’export</span>
+      <div class="space-y-2">
+        <div class="flex items-center p-2 rounded hover:bg-gray-800 transition">
+          <input id="mode-all" name="mode" type="radio" value="all" checked class="w-4 h-4 text-amber-400 bg-gray-700 border-gray-600 focus:ring-amber-400 focus:ring-2 rounded">
+          <label for="mode-all" class="ml-2 text-amber-100">Tout le tableau</label>
+        </div>
+        <div class="flex items-center p-2 rounded hover:bg-gray-800 transition">
+          <input id="mode-year" name="mode" type="radio" value="year" class="w-4 h-4 text-amber-400 bg-gray-700 border-gray-600 focus:ring-amber-400 focus:ring-2 rounded">
+          <label for="mode-year" class="ml-2 text-amber-100">Pour l'année</label>
+        </div>
+        <div class="flex items-center p-2 rounded hover:bg-gray-800 transition">
+          <input id="mode-month" name="mode" type="radio" value="month" class="w-4 h-4 text-amber-400 bg-gray-700 border-gray-600 focus:ring-amber-400 focus:ring-2 rounded">
+          <label for="mode-month" class="ml-2 text-amber-100">Pour le mois</label>
+        </div>
+        <div class="flex items-center p-2 rounded hover:bg-gray-800 transition">
+          <input id="mode-id" name="mode" type="radio" value="id" class="w-4 h-4 text-amber-400 bg-gray-700 border-gray-600 focus:ring-amber-400 focus:ring-2 rounded">
+          <label for="mode-id" class="ml-2 text-amber-100">Par numéro</label>
+        </div>
+      </div>
+    </div>
+    <div id="field-year" class="bg-gray-700 rounded-lg p-4 shadow mb-2 hidden">
+      <label for="form-year" class="block text-sm font-semibold text-amber-300 mb-1">Année</label>
+      <input type="number" id="form-year" class="w-full px-3 py-2 bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition placeholder:text-gray-400" placeholder="2025">
+    </div>
+    <div id="field-month" class="bg-gray-700 rounded-lg p-4 shadow mb-2 hidden">
+      <label for="form-month" class="block text-sm font-semibold text-amber-300 mb-1">Mois</label>
+      <input type="month" id="form-month" class="w-full px-3 py-2 bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition placeholder:text-gray-400">
+    </div>
+    <div id="field-id" class="bg-gray-700 rounded-lg p-4 shadow mb-2 hidden">
+      <label for="form-id" class="block text-sm font-semibold text-amber-300 mb-1">Numéro</label>
+      <input type="text" id="form-id" placeholder="App_12345/2025" class="w-full px-3 py-2 bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition placeholder:text-gray-400">
+    </div>
+    <button type="submit" class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg text-lg font-semibold shadow transition">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 4v12"/></svg>
+      Lancer l'export
+    </button>
+  </form>
+</div>
+
+<!-- Toast notifications -->
+<div id="toast-container" class="fixed top-6 right-6 z-50 space-y-2"></div>
+
+<!-- =======================  SCRIPT GÉNÉRAL  ======================= -->
+<script>
+/* ================== COLLAB TEMPS RÉEL (Yjs) ================== */
+// 1. document partagé + room P2P
+const ydoc     = new Y.Doc();
+const provider = new WebrtcProvider('upc-room-prod', ydoc); // change le nom !
+
+// 2. structure des données : une Y.Map (clé = n° ligne) pour le tableau Main
+const yMain = ydoc.getMap('mainRows');
+
+// 3. utilitaire : convertir Y.Map -> Array (Handsontable)
+function rowsFromYjs() {
+  const out = [];
+  yMain.forEach((val, key) => { out[Number(key)] = val; });
+  return out.filter(Boolean);
+}
+
+/* ----------  Drawer  ---------- */
+const exportBtn = document.querySelector('[data-drawer-target="drawer-export"]');
+const closeBtn  = document.querySelector('[data-drawer-hide="drawer-export"]');
+const drawer    = document.getElementById('drawer-export');
+exportBtn.addEventListener('click',  () => drawer.classList.remove('translate-x-full'));
+closeBtn.addEventListener('click', () => drawer.classList.add   ('translate-x-full'));
+
+/* ----------  Radios form export  ---------- */
+document.querySelectorAll('#export-form input[name="mode"]').forEach(r => {
+  r.addEventListener('change', () => {
+    const v = document.querySelector('#export-form input[name="mode"]:checked').value;
+    ['year','month','id'].forEach(k =>
+      document.getElementById('field-'+k).style.display = v===k ? 'block' : 'none'
+    );
+    let name = 'Export JUB - ';
+    if(v==='all')   name += 'Complet';
+    if(v==='year')  name += `Année ${document.getElementById('form-year').value||''}`;
+    if(v==='month') name += `Mois ${document.getElementById('form-month').value||''}`;
+    if(v==='id')    name += `Décision ${document.getElementById('form-id').value||''}`;
+    document.getElementById('export-filename').value = name;
+  });
+});
+
+/* ----------  Navigation  ---------- */
+document.querySelectorAll('.side-link').forEach(l => {
+  l.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelectorAll('.side-link').forEach(x =>
+      x.classList.remove('active','bg-gray-600','text-white')
+    );
+    l.classList.add('active','bg-gray-600','text-white');
+    document.getElementById('page-title').textContent = l.textContent.trim();
+    document.querySelectorAll('[id^="page-"]').forEach(s => s.classList.add('hidden'));
+    document.getElementById('page-' + l.dataset.page).classList.remove('hidden');
+  });
+});
+
+/* ----------  Utils  ---------- */
+const pad = n => String(n).padStart(2,'0');
+const ddmmyyyy = d => `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+
+/* ----------  Chart.js  ---------- */
+let jurChart, lineChart;
+document.addEventListener('DOMContentLoaded', () => {
+  const baseFont = getComputedStyle(document.body).fontFamily;
+  Chart.defaults.font.family = baseFont;
+  Chart.defaults.color = '#e2e8f0';
+
+  jurChart = new Chart(
+    document.getElementById('chart-jurisdictions').getContext('2d'),
+    {
+      type: 'doughnut',
+      data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
+      options: {
+        responsive: true,
+        aspectRatio: 2.4,
+        plugins: { legend: { position: 'bottom', labels: { color: '#fff' } } }
+      }
+    }
+  );
+
+  lineChart = new Chart(
+    document.getElementById('chart-monthly').getContext('2d'),
+    {
+      type: 'line',
+      data: { labels: [], datasets: [] },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom', labels: { color: '#fff' } } },
+        scales: {
+          x: { title: { display: true, text: 'Mois', color: '#fff' }, ticks: { color: '#fff' } },
+          y: { title: { display: true, text: 'Nombre de décisions', color: '#fff' }, ticks: { color: '#fff' } }
+        }
+      }
+    }
+  );
+});
+
+/* ----------  Stats & charts update  ---------- */
+function updateStats() {
+  const rows = store.main;
+  document.getElementById('stat-total').textContent = rows.length;
+
+  const byJur = {};
+  rows.forEach(r => {
+    const j = r.Court || r.Juridiction || '–';
+    byJur[j] = (byJur[j]||0) + 1;
+  });
+  document.getElementById('stat-jur').innerHTML =
+    Object.entries(byJur).sort((a,b)=>b[1]-a[1]).map(([j,c])=>`<li>${j}: ${c}</li>`).join('');
+
+  const byYear = {};
+  rows.forEach(r => {
+    const d = new Date(r.Date||r.Dates);
+    if(!isNaN(d)) byYear[d.getFullYear()] = (byYear[d.getFullYear()]||0) + 1;
+  });
+  const years = Object.keys(byYear).map(Number).sort((a,b)=>b-a).slice(0,3);
+  document.getElementById('stat-year').innerHTML =
+    years.map(y=>`<li>${y}: ${byYear[y]}</li>`).join('');
+
+  jurChart.data.labels = Object.keys(byJur);
+  jurChart.data.datasets[0].data = Object.values(byJur);
+  jurChart.data.datasets[0].backgroundColor =
+    jurChart.data.labels.map((_,i)=>`hsl(${i*360/jurChart.data.labels.length},70%,50%)`);
+  jurChart.update();
+
+  const monthly = {}, juris = new Set();
+  rows.forEach(r => {
+    const d = new Date(r.Date||r.Dates); if(isNaN(d)) return;
+    const m = `${d.getFullYear()}-${pad(d.getMonth()+1)}`;
+    const j = r.Court || r.Juridiction || '–';
+    monthly[m] = monthly[m]||{};
+    monthly[m][j] = (monthly[m][j]||0) + 1;
+    juris.add(j);
+  });
+  const months = Object.keys(monthly).sort();
+  lineChart.data.labels = months;
+  lineChart.data.datasets = [...juris].map((j,i)=>({
+    label: j,
+    data: months.map(m=>monthly[m][j]||0),
+    borderColor: `hsl(${i*360/juris.size},70%,50%)`,
+    fill: false
+  }));
+  lineChart.update();
+}
+
+/* ----------  Handsontable renderers  ---------- */
+function setColor(td,f){ if(f==='retained') td.style.color='#34d399'; if(f==='excluded') td.style.color='#f87171'; }
+const DateR = Handsontable.renderers.DateRenderer;
+const coloredDateR = function(...a){ DateR.apply(this,a); setColor(a[1],a[6].flag); };
+const textFlagR    = function(...a){ Handsontable.renderers.TextRenderer.apply(this,a); setColor(a[1],a[6].flag); };
+const linkR = (i,td,r,c,p,v)=>{ Handsontable.dom.empty(td); if(v){ const a=document.createElement('a'); a.href=v; a.text='Lien'; a.target='_blank'; a.className='text-violet-300 underline'; td.append(a); }};
+const btnR  = (t,cls)=>(i,td,r,c,p,v)=>{ Handsontable.dom.empty(td); if(v){ const b=document.createElement('button'); b.textContent=t; b.className='px-2 py-1 rounded '+cls; b.onclick=()=>window.open(v,'_blank'); td.append(b); } };
+const apportRenderer = (inst,td,row,col,prop,val)=>{ Handsontable.dom.empty(td); td.textContent = val?.length>200? val.slice(0,200)+'…' : (val||''); };
+
+/* ----------  Tables  ---------- */
+const common = {
+  licenseKey:'non-commercial-and-evaluation',
+  colHeaders:true,rowHeaders:true,
+  height:500,width:'100%',
+  dropdownMenu:true,filters:true,contextMenu:true,
+  manualColumnResize:true,autoRowSize:true,autoColumnSize:{useHeaders:true},
+  stretchH:'all',selectionMode:'multiple',
+  search:{searchResultClass:'ht-search-result'},
+  columnSorting:{indicator:true,headerAction:true}
+};
+
+const hotMain = new Handsontable(document.getElementById('hot-main'), {
+  ...common,
+  language: 'fr-FR',
+  comments: true,
+  colHeaders: ['Date','Registry','Details','Court','Type','Parties','PDF'],
+  columns: [
+    { data:'Date', type:'date', dateFormat:'DD/MM/YYYY', correctFormat:true, datePickerConfig:{ format:'DD/MM/YYYY' }, renderer:coloredDateR },
+    { data:'Registry', renderer:textFlagR },
+    { data:'Full Details', renderer:btnR('Details','bg-orange-500/20') },
+    { data:'Court' },{ data:'Type of action' },{ data:'Parties', width:350 },
+    { data:'UPC Document', renderer:btnR('PDF','bg-emerald-500/20') }
+  ],
+  contextMenu: {
+    items: {
+      ...Handsontable.plugins.ContextMenu.DEFAULT_ITEMS,
+      "add_edit_comment": {
+        name: function() {
+          const sel = this.getSelectedLast();
+          if (!sel) return "Ajouter un commentaire";
+          const meta = this.getCellMeta(sel[0], sel[1]);
+          return meta.comment && meta.comment.value ? "Modifier le commentaire" : "Ajouter un commentaire";
+        },
+        callback: function(key, selection) {
+          const [row, col] = [selection[0].start.row, selection[0].start.col];
+          const meta = this.getCellMeta(row, col);
+          const oldComment = (meta.comment && meta.comment.value) ? meta.comment.value : "";
+          const val = prompt("Commentaire pour cette cellule :", oldComment);
+          if (val !== null) {
+            this.setCellMeta(row, col, 'comment', { value: val });
+            this.render();
+          }
+        }
+      },
+      "remove_comment": {
+        name: "Retirer le commentaire",
+        callback: function(key, selection) {
+          const [row, col] = [selection[0].start.row, selection[0].start.col];
+          this.removeCellMeta(row, col, 'comment');
+          this.render();
+        }
+      },
+      "sep1": "---------",
+      "exclude_decision": {
+        name: "Exclure la décision",
+        callback: function(key, selection) {
+          const rowIdx = selection[0].start.row;
+          const row = hotMain.getSourceDataAtRow(hotMain.toPhysicalRow(rowIdx));
+          if (!row) return;
+          const exclu = {
+            "Doc JUB?": row["UPC Document"] || "",
+            "Dates": row["Date"] || "",
+            "Parties": row["Parties"] || "",
+            "Numéro de l'affaire": row["Registry"] || "",
+            "Numéro de l'ordonnance": row["Registry"] || "",
+            "Juridiction": row["Court"] || "",
+            "Motif": "",
+            "Lien": row["UPC Document"] || ""
+          };
+          store.excluded.push(exclu);
+          // Tri du plus récent au plus vieux
+          store.excluded.sort((a, b) => {
+            const parse = d => {
+              if (!d) return new Date(0);
+              if (/^\d{1,2} [a-zéû]+ \d{4}$/i.test(d)) {
+                const [j, mois, a] = d.split(' ');
+                const moisFr = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+                const m = moisFr.indexOf(mois.toLowerCase());
+                return new Date(a, m, j);
+              }
+              if (/^\d{2}\/\d{2}\/\d{4}$/.test(d)) {
+                const [j, m, a] = d.split('/');
+                return new Date(`${a}-${m}-${j}`);
+              }
+              return new Date(d);
+            };
+            return parse(b["Dates"]) - parse(a["Dates"]);
+          });
+          loadTable('excluded', store.excluded);
+          computeFlags();           // <-- Met à jour les flags dans Main
+          applyFlags(hotMain);      // <-- Colore Date et Registry selon le flag
+          showToast("Décision exclue et ajoutée au tableau Exclues.", "success");
+        }
+      },
+      "integrate_decision": {
+        name: "Intégrer la décision",
+        callback: function(key, selection) {
+          const rowIdx = selection[0].start.row;
+          const row = hotMain.getSourceDataAtRow(hotMain.toPhysicalRow(rowIdx));
+          if (!row) return;
+          // Crée un nouvel objet pour Retenues
+          const retenue = {
+            "Dates": row["Date"] || "",
+            "Parties": row["Parties"] || "",
+            "Juridiction": row["Court"] || "",
+            "Numéro de l'affaire": row["Registry"] || "",
+            "Numéro de l'ordonnance": row["Registry"] || "",
+            "Sujet 1": "",
+            "Règle/ Article 1": "",
+            "Legal Text 1": "",
+            "Apport 1": "",
+            "Sujet 2": "",
+            "Règle/ Article 2": "",
+            "Legal text 2": "",
+            "Apport 2": "",
+            "Sujet 3": "",
+            "Règle/Article  3": "",
+            "Legal text 3": "",
+            "Apport 3": "",
+            "Lien": row["UPC Document"] || "",
+            "Langue": "",
+            "Traduction": ""
+          };
+          store.retained.push(retenue);
+          // Tri du plus récent au plus vieux
+          store.retained.sort((a, b) => {
+            const parse = d => {
+              if (!d) return new Date(0);
+              if (/^\d{2}\/\d{2}\/\d{4}$/.test(d)) {
+                const [j, m, a] = d.split('/');
+                return new Date(`${a}-${m}-${j}`);
+              }
+              return new Date(d);
+            };
+            return parse(b["Dates"]) - parse(a["Dates"]);
+          });
+          loadTable('retained', store.retained);
+          computeFlags();
+          applyFlags(hotMain);
+          showToast("Décision intégrée au tableau Retenues.", "success");
+        }
+      }
+    }
+  }
+});
+
+/* ----------  Synchro Handsontable <-> Yjs  ---------- */
+
+// A.  Quand l’utilisateur modifie une cellule -----------------
+hotMain.addHook('afterChange', (changes, src) => {
+  if (!changes || src === 'loadData' || src === 'remote') return;  // ignore boucles
+  ydoc.transact(() => {
+    const full = hotMain.getSourceData();          // on renvoie l’état complet (simple)
+    yMain.clear();                                 // vide la map
+    full.forEach((row, i) => yMain.set(String(i), row));
+  });
+});
+
+// B.  Quand Yjs reçoit un patch distant -----------------------
+yMain.observe(event => {
+  // 1. met à jour silencieusement la valeur de chaque cellule changée
+  event.changes.keys.forEach((_, key) => {
+    const row = Number(key);
+    const data = yMain.get(key);
+    Object.keys(data).forEach(prop => {
+      const colIndex = hotMain.propToCol(prop);
+      if (colIndex != null) hotMain.setDataAtCell(row, colIndex, data[prop], 'remote');
+    });
+  });
+  // 2. si la table était vide chez ce client (première connexion) -> loadData complet
+  if (!hotMain.countRows()) {
+    hotMain.loadData(rowsFromYjs(), 'remote');
+    applyFlags(hotMain);
+  }
+});
+
+// C.  Première synchronisation --------------------------------
+if (!yMain.size) {                         // premier arrivé : pousse sa table
+  yMain.observeDeep(() => {});             // force la création du doc sur peers
+  ydoc.transact(() => {
+    hotMain.getSourceData().forEach((r, i) => yMain.set(String(i), r));
+  });
+} else {                                   // déjà des données -> on les charge
+  hotMain.loadData(rowsFromYjs(), 'remote');
+  applyFlags(hotMain);
+}
+
+
+const hdrRet = [
+  'Dates','Parties','Juridiction','Numéro de l\'affaire','Numéro de l\'ordonnance',
+  'Sujet 1','Règle/ Article 1','Legal Text 1','Apport 1',
+  'Sujet 2','Règle/ Article 2','Legal text 2','Apport 2',
+  'Sujet 3','Règle/Article  3','Legal text 3','Apport 3',
+  'Lien','Langue','Traduction'
+];
+const colsRet = hdrRet.map(h=>{
+  if(h==='Dates') return { data:h, type:'date', dateFormat:'DD/MM/YYYY', correctFormat:true, datePickerConfig:{ format:'DD/MM/YYYY' }, renderer:coloredDateR };
+  if(h==='Lien')  return { data:h, renderer:linkR };
+  if(h.startsWith('Apport')) return { data:h, width:300, renderer:apportRenderer };
+  return { data:h, width:(h.includes('Apport')||h==='Parties'||h==='Traduction')?300:undefined };
+});
+const hotRetained = new Handsontable(document.getElementById('hot-retained'), {
+  ...common,
+  language: 'fr-FR',
+  comments: true,
+  colHeaders: hdrRet,
+  columns: colsRet
+});
+
+// Ajoute ce renderer pour la colonne Dates du tableau Excluded
+function formatDateLongFr(date) {
+  if (!date) return '';
+  const d = (date instanceof Date) ? date : new Date(date);
+  if (isNaN(d)) return date;
+  const mois = [
+    "janvier", "février", "mars", "avril", "mai", "juin",
+    "juillet", "août", "septembre", "octobre", "novembre", "décembre"
+  ];
+  return `${d.getDate()} ${mois[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function excludedDateRenderer(instance, td, row, col, prop, value, cellProperties) {
+  Handsontable.renderers.TextRenderer.apply(this, arguments);
+  td.textContent = formatDateLongFr(value);
+  setColor(td, cellProperties.flag);
+}
+
+// Editor pour convertir la saisie en format long français
+const excludedDateEditor = Handsontable.editors.TextEditor.prototype.extend();
+
+excludedDateEditor.prototype.saveValue = function(val, ctrlDown) {
+  let v = val[0];
+  // Essaye de parser une date au format JJ/MM/AAAA ou JJ-MM-AAAA
+  let d = null;
+  if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(v)) {
+    const [j, m, a] = v.split(/[\/\-]/);
+    d = new Date(`${a}-${m}-${j}`);
+  } else {
+    d = new Date(v);
+  }
+  if (!isNaN(d)) {
+    v = formatDateLongFr(d);
+  }
+  Handsontable.editors.TextEditor.prototype.saveValue.call(this, [v], ctrlDown);
+};
+
+const hotExcluded = new Handsontable(document.getElementById('hot-excluded'), {
+  ...common,
+  language: 'fr-FR',
+  comments: true,
+  colHeaders:['Doc','Dates','Parties','Numéro de l\'affaire','Numéro de l\'ordonnance','Juridiction','Motif','Lien'],
+  columns:[
+    {data:'Doc JUB?'},
+    { data:'Dates', renderer: excludedDateRenderer, editor: excludedDateEditor },
+    {data:'Parties', width:350},
+    {data:'Numéro de l\'affaire'},{data:'Numéro de l\'ordonnance'},{data:'Juridiction'},{data:'Motif',width:300},
+    {data:'Lien',renderer:linkR}
+  ]
+});
+
+/* ----------  Recherche, pagination, store  ---------- */
+const store = { main:[], retained:[], excluded:[] };
+const queries = { main:'', retained:'', excluded:'' };
+
+function attachSearch(hot,input,span,key){
+  const plugin = hot.getPlugin('search');
+  input.addEventListener('input',()=>{
+    const res = plugin.query(input.value);
+    span.textContent = `Résultats : ${res.length}`;
+    hot.render();
+    queries[key] = input.value;
+  });
+  return ()=>plugin.query(queries[key]);
+}
+const reappl = {
+  main    : attachSearch(hotMain    , document.getElementById('search-main')    , document.getElementById('count-main')    ,'main'),
+  retained: attachSearch(hotRetained, document.getElementById('search-retained'), document.getElementById('count-retained'),'retained'),
+  excluded: attachSearch(hotExcluded, document.getElementById('search-excluded'), document.getElementById('count-excluded'),'excluded')
+};
+
+function computeFlags(){
+  const rSet = new Set(store.retained.flatMap(r=>[r["Numéro de l'affaire"],r["Numéro de l'ordonnance"]]).filter(Boolean));
+  const eSet = new Set(store.excluded.flatMap(r=>[r["Numéro de l'affaire"],r["Numéro de l'ordonnance"]]).filter(Boolean));
+  store.main.forEach(row=>{
+    const ids = (row.Registry||'').split(/\s+/);
+    row._flag = ids.some(t=>eSet.has(t))   ? 'excluded'
+               : ids.some(t=>rSet.has(t))  ? 'retained'
+               : null;
+  });
+}
+function applyFlags(hot){
+  for(let r=0;r<hot.countRows();r++){
+    const src = hot.getSourceDataAtRow(hot.toPhysicalRow(r))||{};
+    hot.setCellMeta(r,0,'flag',src._flag);
+    hot.setCellMeta(r,1,'flag',src._flag);
+  }
+  hot.render();
+}
+function paginate(hot, data, wrap, key) {
+  const size = 10; let p = 0;
+  const pages = () => Math.ceil(data.length / size) || 1;
+
+  // Couleurs par tableau
+  const btnColors = {
+    main:     'bg-emerald-500 hover:bg-emerald-600 text-white',
+    retained: 'bg-amber-500 hover:bg-amber-600 text-white',
+    excluded: 'bg-rose-500 hover:bg-rose-600 text-white'
+  };
+  const colorClass = btnColors[key] || 'bg-gray-500 text-white';
+
+  // Bouton stylé
+  const mkBtn = (t, cb, d) => {
+    const b = document.createElement('button');
+    b.textContent = t;
+    b.disabled = d;
+    b.className = `px-4 py-1 rounded ${colorClass} transition-colors duration-150`;
+    b.onclick = cb;
+    return b;
+  };
+
+  const draw = () => {
+    hot.loadData(data.slice(p * size, (p + 1) * size));
+    applyFlags(hot);
+    reappl[key]();
+    wrap.innerHTML = '';
+    wrap.append(
+      mkBtn('Précédent', () => { p--; draw(); }, p === 0),
+      (() => { const s = document.createElement('span'); s.textContent = `Page ${p + 1}/${pages()}`; return s; })(),
+      mkBtn('Suivant', () => { p++; draw(); }, p >= pages() - 1)
+    );
+  };
+  draw();
+}
+function loadTable(tbl,rows){
+  store[tbl] = rows;
+  computeFlags();
+  if(tbl==='main')     paginate(hotMain    , rows, document.getElementById('pager-main')    ,'main');
+  if(tbl==='retained') paginate(hotRetained, rows, document.getElementById('pager-retained'),'retained');
+  if(tbl==='excluded') paginate(hotExcluded, rows, document.getElementById('pager-excluded'),'excluded');
+  if(tbl!=='main' && store.main.length)
+    paginate(hotMain, store.main, document.getElementById('pager-main'),'main');
+  if(tbl==='main') updateStats();
+}
+function parseFile(file, tbl) {
+  const fr = new FileReader();
+  fr.onload = e => {
+    const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: true });
+    const arr = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '', raw: true });
+
+    // Correction format Dates pour Retained
+    if (tbl === "retained") {
+      arr.forEach(row => {
+        if (row["Dates"]) {
+          let d = row["Dates"];
+          if (typeof d === "string" && /^\d{2}\/\d{2}\/\d{4}$/.test(d)) {
+            d = parseFrDate(d);
+          } else {
+            d = new Date(d);
+          }
+          if (!isNaN(d)) {
+            row["Dates"] = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+          }
+        }
+      });
+    }
+
+    // Correction format Dates pour Excluded (format "31 mars 2025")
+    if (tbl === "excluded") {
+      const mois = [
+        "janvier", "février", "mars", "avril", "mai", "juin",
+        "juillet", "août", "septembre", "octobre", "novembre", "décembre"
+      ];
+      arr.forEach(row => {
+        if (row["Dates"]) {
+          const d = new Date(row["Dates"]);
+          if (!isNaN(d)) {
+            row["Dates"] = `${d.getDate()} ${mois[d.getMonth()]} ${d.getFullYear()}`;
+          }
+        }
+      });
+    }
+
+    loadTable(tbl, arr);
+    // Toast selon le tableau importé
+    let label = "tableau";
+    if (tbl === "main") label = "Décisions JUB";
+    if (tbl === "retained") label = "Décisions retenues";
+    if (tbl === "excluded") label = "Décisions exclues";
+    showToast(`Import réussi : ${label}`, "success");
+  };
+  fr.readAsArrayBuffer(file);
+  if (tbl === 'main') {
+  ydoc.transact(() => {
+    yMain.clear();
+    arr.forEach((row, i) => yMain.set(String(i), row));
+  });
+}
+}
+[['file-main','main'],['file-retained','retained'],['file-excluded','excluded']]
+  .forEach(([id, tbl]) => {
+    document.getElementById(id).addEventListener('change', e => parseFile(e.target.files[0], tbl));
+  });
+
+/* ----------  Gestion JSON (load + save + manual load)  ---------- */
+const infoElt = document.getElementById('json-info');
+
+/* helper to trigger download */
+function downloadJSON(fname,obj){
+  const blob = new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = fname; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* auto-load if served via http(s) */
+(async ()=>{
+  if(location.protocol.startsWith('http')){
+    try {
+      const res = await fetch('./upc-data.json',{cache:'no-store'});
+      if(!res.ok) throw new Error('not found');
+      const data = await res.json();
+      ['main','retained','excluded'].forEach(k=>{
+        if(Array.isArray(data[k]) && data[k].length) loadTable(k,data[k]);
+      });
+      infoElt.textContent = 'Données chargées : ' + new Date().toLocaleString();
+    } catch {
+      infoElt.textContent = 'Aucune sauvegarde sur serveur';
+    }
+  } else {
+    infoElt.textContent = 'Mode fichier: utilisez "Charger JSON"';
+  }
+})();
+
+/* save JSON with timestamped name */
+document.getElementById('btn-save-json').addEventListener('click', () => {
+  computeFlags();
+
+  // Récupère les commentaires pour chaque tableau
+  function getComments(hot) {
+    const comments = [];
+    for (let r = 0; r < hot.countRows(); r++) {
+      for (let c = 0; c < hot.countCols(); c++) {
+        const meta = hot.getCellMeta(r, c);
+        if (meta && meta.comment && meta.comment.value) {
+          comments.push({ row: r, col: c, value: meta.comment.value });
+        }
+      }
+    }
+    return comments;
+  }
+
+  const data = {
+    main:     store.main,
+    retained: store.retained,
+    excluded: store.excluded,
+    main_comments:     getComments(hotMain),
+    retained_comments: getComments(hotRetained),
+    excluded_comments: getComments(hotExcluded)
+  };
+
+  const now = new Date();
+  const dd  = pad(now.getDate());
+  const mm  = pad(now.getMonth()+1);
+  const yyyy= now.getFullYear();
+  const hh  = pad(now.getHours());
+  const min = pad(now.getMinutes());
+  const fname = `upc-data_${dd}-${mm}-${yyyy}_${hh}h${min}.json`;
+
+  downloadJSON(fname, data);
+  infoElt.textContent = 'Sauvegarde générée : ' + now.toLocaleString();
+  showToast("Sauvegarde exportée dans le dossier !", "success");
+});
+
+
+/* manual JSON load button */
+document.getElementById('btn-load-json').addEventListener('click', ()=>{
+  document.getElementById('json-file-input').click();
+});
+/* ----------- 2. Chargement JSON avec restauration des commentaires ----------- */
+document.getElementById('json-file-input').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const fr = new FileReader();
+  fr.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      ['main','retained','excluded'].forEach(k=>{
+        if(Array.isArray(data[k])) loadTable(k,data[k]);
+      });
+
+      // Fonction pour restaurer les commentaires
+      function setComments(hot, comments) {
+        if (!Array.isArray(comments)) return;
+        clearComments(hot); // Nettoie correctement les anciens commentaires
+        comments.forEach(({ row, col, value }) => {
+          hot.setCellMeta(row, col, 'comment', { value });
+        });
+        hot.render();
+      }
+
+      setTimeout(() => { // Attend que les tableaux soient bien rechargés
+        setComments(hotMain,     data.main_comments);
+        setComments(hotRetained, data.retained_comments);
+        setComments(hotExcluded, data.excluded_comments);
+      }, 100);
+
+      infoElt.textContent = 'Sauvegarde chargée : ' + new Date().toLocaleString();
+	  if (tbl === 'main') {
+  ydoc.transact(() => {
+    yMain.clear();
+    arr.forEach((row, i) => yMain.set(String(i), row));
+  });
+}
+      showToast("Sauvegarde chargée avec succès !", "success");
+    } catch {
+      alert('Fichier JSON invalide');
+      showToast("Erreur : fichier JSON invalide.", "error");
+    }
+  };
+  fr.readAsText(f,'utf-8');
+});
+
+/* ----------  Toast notifications  ---------- */
+function showToast(message, type = "success") {
+  const container = document.getElementById('toast-container');
+  const colors = type === "success"
+    ? "bg-emerald-600 text-white"
+    : "bg-rose-600 text-white";
+  const toast = document.createElement('div');
+  toast.className = `px-4 py-2 rounded shadow ${colors} animate-fade-in`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('opacity-0');
+    setTimeout(() => toast.remove(), 500);
+  }, 3000);
+}
+
+// Pour parser une date DD/MM/YYYY correctement :
+function parseFrDate(str) {
+  const [j, m, a] = str.split(/[\/\-]/);
+  return new Date(`${a}-${m}-${j}T00:00:00`);
+}
+
+// --- Ajoutez ceci ---
+function clearComments(hot) {
+  const rowCount = hot.countRows();
+  const colCount = hot.countCols();
+  for (let r = 0; r < rowCount; r++) {
+    for (let c = 0; c < colCount; c++) {
+      const meta = hot.getCellMeta(r, c);
+      if (meta && meta.comment) {
+        hot.removeCellMeta(r, c, 'comment');
+      }
+    }
+  }
+  hot.render();
+}
+</script>
+
+<!-- =======================  EXPORT DOCX (MODULE)  ======================= -->
+<script type="module">
+import {Document,Packer,Paragraph,TextRun,AlignmentType,ShadingType}
+  from 'https://cdn.jsdelivr.net/npm/docx@9.5.0/+esm';
+
+document.getElementById('export-form').addEventListener('submit',e=>{
+  e.preventDefault();
+  const filename=(document.getElementById('export-filename').value||'decisions_retenues')+'.docx';
+  let rows=[...store.retained];
+  const mode=document.querySelector('#export-form input[name="mode"]:checked').value;
+  if(mode==='year'){
+    const y=parseInt(document.getElementById('form-year').value||0,10);
+    rows=rows.filter(r=>new Date(r.Dates).getFullYear()===y);
+  }
+  if(mode==='month'){
+    const [y,m]=(document.getElementById('form-month').value||'').split('-').map(Number);
+    rows=rows.filter(r=>{const d=new Date(r.Dates);return d.getFullYear()===y&&d.getMonth()+1===m;});
+  }
+  if(mode==='id'){
+    const id=document.getElementById('form-id').value.trim();
+    rows=rows.filter(r=>{
+      const a=String(r["Numéro de l'affaire"]).trim(),o=String(r["Numéro de l'ordonnance"]).trim();
+      return a===id||o===id;
+    });
+  }
+
+  const sections=rows.map(r=>{
+    const dt=ddmmyyyy(new Date(r.Dates));
+    const caseNum=String(r["Numéro de l'affaire"]).trim();
+    const ordNum=String(r["Numéro de l'ordonnance"]).trim();
+    const link=String(r.Lien||'').trim();
+    const first=`${r.Juridiction}, Order dated ${dt}, ${r.Parties} (Case/ Registry number: ${caseNum}, [${ordNum} → ${link}])`;
+    const braced=`{{${r.Juridiction}, Order dated ${dt}}}, ${r.Parties} (Case/ Registry number: ${caseNum}, [${ordNum} → ${link}])`;
+    const children=[
+      new Paragraph({children:[new TextRun({text:first,font:'Aptos',size:22,color:'000000',shading:{type:ShadingType.CLEAR,fill:'CCFFCC'}})]})
+    ];
+    [1,2,3].forEach(n=>{
+      const rule=r[`Règle/ Article ${n}`]||r[`Règle/Article  ${n}`]||'';
+      const lt  =r[`Legal Text ${n}`]||r[`Legal text ${n}`]||'';
+      const subj=r[`Sujet ${n}`]||'';
+      const apport=r[`Apport ${n}`]||'';
+      if(!rule&&!lt&&!subj&&!apport) return;
+      if(rule) children.push(new Paragraph({alignment:AlignmentType.JUSTIFIED,children:[new TextRun({text:rule,bold:true,font:'Aptos',size:22})]}));
+      if(lt)   children.push(new Paragraph({alignment:AlignmentType.JUSTIFIED,children:[new TextRun({text:lt,bold:true,font:'Aptos',size:22})]}));
+      children.push(new Paragraph({alignment:AlignmentType.JUSTIFIED,children:[new TextRun({text:braced,font:'Aptos',size:22})]}));
+      if(subj||apport){
+        (`${subj}: ${apport}`).split(/\r?\n/).forEach(line=>{
+          children.push(new Paragraph({alignment:AlignmentType.JUSTIFIED,children:[new TextRun({text:line,font:'Aptos',size:22})]}));
+        });
+      }
+      children.push(new Paragraph({}));
+    });
+    (r.Traduction||'').split(/\r?\n/).filter(Boolean).forEach(line=>{
+      children.push(new Paragraph({children:[new TextRun({text:line,font:'Aptos',size:22})]}));
+    });
+    return {properties:{},children};
+  });
+
+  const doc=new Document({sections});
+  Packer.toBlob(doc).then(blob=>{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=filename; a.click();
+    URL.revokeObjectURL(url);
+  });
+  drawer.classList.add('translate-x-full');
+});
+</script>
+
+<script>
+// Utilitaire pour exporter un tableau Handsontable au format Excel avec mise en forme
+function exportTableToExcel(tableKey, filename) {
+  // Récupère les données et les entêtes
+  let data = [];
+  let headers = [];
+  if (tableKey === 'main') {
+    headers = ['Date','Registry','Details','Court','Type','Parties','PDF'];
+    data = store.main.map(row => [
+      row['Date'] || '', row['Registry'] || '', row['Full Details'] || '',
+      row['Court'] || '', row['Type of action'] || '', row['Parties'] || '', row['UPC Document'] || ''
+    ]);
+  } else if (tableKey === 'retained') {
+    headers = [
+      'Dates','Parties','Juridiction','Numéro de l\'affaire','Numéro de l\'ordonnance',
+      'Sujet 1','Règle/ Article 1','Legal Text 1','Apport 1',
+      'Sujet 2','Règle/ Article 2','Legal text 2','Apport 2',
+      'Sujet 3','Règle/Article  3','Legal text 3','Apport 3',
+      'Lien','Langue','Traduction'
+    ];
+    data = store.retained.map(row => headers.map(h => row[h] || ''));
+  } else if (tableKey === 'excluded') {
+    headers = ['Doc JUB?','Dates','Parties','Numéro de l\'affaire','Numéro de l\'ordonnance','Juridiction','Motif','Lien'];
+    data = store.excluded.map(row => headers.map(h => row[h] || ''));
+  }
+
+  // Crée la feuille Excel
+  const ws_data = [headers, ...data];
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+
+  // Mise en forme : largeur auto, entête en gras et fond coloré
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  ws['!cols'] = headers.map(() => ({ wch: 22 }));
+  for (let C = range.s.c; C <= range.e.c; ++C) {
+    const cell = ws[XLSX.utils.encode_cell({ r:0, c:C })];
+    if (cell) {
+      cell.s = {
+        font: { bold: true, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: tableKey === 'main' ? "10B981" : tableKey === 'retained' ? "F59E42" : "F43F5E" } }
+      };
+    }
+  }
+
+  // Ajoute le style (nécessite SheetJS Pro pour le style avancé, mais le header coloré fonctionne en open source)
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Export');
+  XLSX.writeFile(wb, filename || `export_${tableKey}.xlsx`);
+}
+
+// Ajoute les boutons d'export Excel dans chaque section de tableau
+document.addEventListener('DOMContentLoaded', () => {
+  [
+    { key: 'main',     btnColor: 'bg-emerald-500 hover:bg-emerald-600', label: 'Exporter Excel' },
+    { key: 'retained', btnColor: 'bg-amber-500 hover:bg-amber-600',     label: 'Exporter Excel' },
+    { key: 'excluded', btnColor: 'bg-rose-500 hover:bg-rose-600',       label: 'Exporter Excel' }
+  ].forEach(({key, btnColor, label}) => {
+    // Sélectionne la section du tableau
+    const section = document.getElementById('page-' + key);
+    if (section) {
+      // Crée un conteneur positionné en bas à droite
+      let exportDiv = section.querySelector('.export-excel-btn');
+      if (!exportDiv) {
+        exportDiv = document.createElement('div');
+        exportDiv.className = 'export-excel-btn absolute right-8 bottom-6 z-10';
+        section.style.position = 'relative';
+        section.appendChild(exportDiv);
+      }
+      // Crée le bouton
+      const btn = document.createElement('button');
+      btn.textContent = label;
+      btn.className = `px-4 py-2 rounded ${btnColor} text-white shadow-lg`;
+      btn.onclick = () => exportTableToExcel(key, `export_${key}_${new Date().toISOString().slice(0,10)}.xlsx`);
+      exportDiv.innerHTML = '';
+      exportDiv.appendChild(btn);
+    }
+  });
+});
+</script>
+
+<script>
+function updateExportSummary() {
+  const mode = document.querySelector('#export-form input[name="mode"]:checked').value;
+  let rows;
+  let txt = '';
+  if (mode === 'all') {
+    rows = [...store.retained];
+    txt = `Décisions exportées : ${rows.length}`;
+  } else if (mode === 'year') {
+    rows = [...store.retained];
+    const y = parseInt(document.getElementById('form-year').value || 0, 10);
+    rows = rows.filter(r => new Date(r.Dates).getFullYear() === y);
+    txt = y ? `Décisions pour l'année ${y} : ${rows.length}` : '';
+  } else if (mode === 'month') {
+    rows = [...store.retained];
+    const [y, m] = (document.getElementById('form-month').value || '').split('-').map(Number);
+    rows = rows.filter(r => {
+      const d = new Date(r.Dates);
+      return d.getFullYear() === y && d.getMonth() + 1 === m;
+    });
+    txt = (y && m) ? `Décisions pour ${m}/${y} : ${rows.length}` : '';
+  } else if (mode === 'id') {
+    rows = [...store.retained];
+    const id = document.getElementById('form-id').value.trim();
+    rows = rows.filter(r => {
+      const a = String(r["Numéro de l'affaire"]).trim(), o = String(r["Numéro de l'ordonnance"]).trim();
+      return a === id || o === id;
+    });
+    txt = id ? `Décisions pour le numéro ${id} : ${rows.length}` : '';
+  }
+  document.getElementById('export-summary').textContent = txt;
+}
+document.querySelectorAll('#export-form input, #export-form select').forEach(e => {
+  e.addEventListener('input', updateExportSummary);
+});
+updateExportSummary();
+</script>
+
+</body>
+</html>
