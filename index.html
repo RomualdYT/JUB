@@ -41,6 +41,49 @@ body{background:#1f2937;color:#e2e8f0}
 .animate-fade-in { animation: fade-in 0.3s; transition: opacity 0.5s; }
 </style>
 
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+  import { getFirestore } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCcUT9tCIvN3xQxK-3NYHYYqEXMq80qrg4",
+    authDomain: "jub-project-9d177.firebaseapp.com",
+    databaseURL: "https://jub-project-9d177-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "jub-project-9d177",
+    storageBucket: "jub-project-9d177.appspot.com",
+    messagingSenderId: "217703639610",
+    appId: "1:217703639610:web:8a1b7906ef0499d446e303",
+    measurementId: "G-5G18M86TZ6"
+  };
+
+  // Initialise l’app Firebase
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  // Expose auth et db au scope global pour qu'on puisse les utiliser ailleurs
+  window.auth = auth;
+  window.db   = db;
+
+  // Déclaration temporaire de runRealtime (sera redéfini plus bas)
+  window.runRealtime = () => {
+    console.warn("runRealtime pas encore défini");
+  };
+
+  // Auth anonyme puis lancement
+  signInAnonymously(auth)
+    .then(() => {
+      console.log("🔑 Auth anonyme OK");
+      if (window.runRealtime) {
+        window.runRealtime();
+      }
+    })
+    .catch(err => {
+      console.error("❌ Échec auth anonyme :", err);
+    });
+</script>
+
 </head>
 <body class="flex h-full overflow-hidden">
 
@@ -896,6 +939,62 @@ function clearComments(hot) {
 }
 </script>
 
+<script type="module">
+  // On récupère les objets Firebase déjà initialisés en head
+  import { doc, onSnapshot, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+  // runRealtime() a été défini lors de l’auth anonyme dans le script précédent
+  // Il faut simplement redéfinir son corps ici
+  window.runRealtime = function() {
+    // -----------------------------------------------------
+    // Fonction qui lie un Handsontable à un document Firestore
+    // -----------------------------------------------------
+    function bindTable(hotInstance, tableKey) {
+      // Référence au document “tables/{tableKey}”
+      const docRef = doc(db, "tables", tableKey);
+      let echo = false;
+
+      // 1) Quand Firestore émet un changement distant
+      onSnapshot(docRef, snapshot => {
+        if (!snapshot.exists()) return;
+        const data = snapshot.data().rows || [];
+        echo = true;                     // on sait que la maj vient de Firestore
+        loadTable(tableKey, data);       // votre helper existant pour recharger le tableau
+      });
+
+      // 2) Quand l’utilisateur édite quelque chose
+      hotInstance.addHook("afterChange", (changes, source) => {
+        // On ne push pas si ça vient de loadTable (pour éviter boucle infinie)
+        if (source === "loadData" || echo) {
+          echo = false;
+          return;
+        }
+        // Variante « full replace » : on réécrit tout le tableau
+        const allData = hotInstance.getSourceData();
+
+        // Écriture dans Firestore { rows: [...], updatedAt: TIMESTAMP }
+        setDoc(docRef, {
+          rows: allData,
+          updatedAt: serverTimestamp()
+        }).catch(err => console.error("Erreur écriture Firestore :", err));
+      });
+    }
+
+    // -----------------------------------------------------
+    // On appelle bindTable() pour chacune de vos tables Handsontable
+    // -----------------------------------------------------
+    bindTable(hotMain    , "main");
+    bindTable(hotRetained, "retained");
+    bindTable(hotExcluded, "excluded");
+  };
+
+  // Si l’auth est déjà loguée (cache du navigateur), on lance directement
+  if (auth.currentUser) {
+    runRealtime();
+  }
+</script>
+
+
 <!-- =======================  EXPORT DOCX (MODULE)  ======================= -->
 <script type="module">
 import {Document,Packer,Paragraph,TextRun,AlignmentType,ShadingType}
@@ -1080,71 +1179,6 @@ document.querySelectorAll('#export-form input, #export-form select').forEach(e =
 });
 updateExportSummary();
 </script>
-<!-- 1️⃣ charge éventuellement le polyfill import-map pour les vieux navigateurs -->
-<script async
-        src="https://ga.jspm.io/npm:es-module-shims@1.9.0/dist/es-module-shims.js"></script>
-
-<script type="importmap">
-{
-  "imports": {
-    "yjs": "https://esm.sh/yjs@13.6.27",
-    "y-webrtc": "https://esm.sh/y-webrtc@10.3.0?bundle&external=yjs"
-  }
-}
-</script>
-
-
-
-
-
-
-<!-- ② Yjs + y-webrtc – aucune duplication -->
-<script type="module">
-  import * as Y from 'yjs';                 // ← résout via l’import-map
-  import { WebrtcProvider } from 'y-webrtc';
-
-  const ROOM = 'upc-handsontable-main';
-
-  document.addEventListener('DOMContentLoaded', () => {
-    if (!window.hotMain || !window.store || !window.loadTable) return;
-
-    /* ----------  Yjs + WebRTC  ---------- */
-    const ydoc     = new Y.Doc();
-    new WebrtcProvider(ROOM, ydoc, { maxConns: 20, filterBcConns: true });
-    const yRows    = ydoc.getArray('rows');
-
-    /* 1ᵉʳ client → pousse le tableau    */
-    if (yRows.length === 0 && window.store.main.length) {
-      yRows.push([structuredClone(window.store.main)]);
-    }
-
-    /* Sync Yjs → Handsontable           */
-    let mute = false;
-    yRows.observeDeep(() => {
-      if (mute) return;
-      mute = true;
-      loadTable('main', yRows.get(0) || []);
-      mute = false;
-    });
-
-    /* Sync Handsontable → Yjs           */
-    hotMain.addHook('afterChange', (_, src) => {
-      if (src === 'loadData' || mute) return;
-      mute = true;
-      ydoc.transact(() => {
-        yRows.delete(0, yRows.length);
-        yRows.insert(0, [structuredClone(window.store.main)]);
-      });
-      mute = false;
-    });
-
-    console.info('✅ Yjs + y-webrtc initialisés (import unique, aucun doublon)');
-  });
-</script>
-
-
-
-
 
 </body>
 </html>
