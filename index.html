@@ -41,16 +41,6 @@ body{background:#1f2937;color:#e2e8f0}
 .animate-fade-in { animation: fade-in 0.3s; transition: opacity 0.5s; }
 </style>
 
-<!-- Yjs + y-webrtc : bundles ESM prêts pour le navigateur -->
-<script type="module">
-  import * as Y from 'https://cdn.jsdelivr.net/npm/yjs@13.6.27/+esm';
-  import { WebrtcProvider } from 'https://cdn.jsdelivr.net/npm/y-webrtc@10.3.0/+esm';
-  // On expose si vous voulez déboguer dans la console
-  window.Y = Y;
-  window.WebrtcProvider = WebrtcProvider;
-</script>
-
-
 </head>
 <body class="flex h-full overflow-hidden">
 
@@ -1091,71 +1081,56 @@ document.querySelectorAll('#export-form input, #export-form select').forEach(e =
 updateExportSummary();
 </script>
 <!-- --- Collaboration temps-réel : Yjs + y-webrtc --- -->
+<!-- 2️⃣  Yjs + y-webrtc – AUCUN doublon -->
 <script type="module">
-  /* =========================================================================
-     1.  IMPORTS ESM 100 % FONCTIONNELS (pas de 404)
-     ========================================================================= */
-  import * as Y from 'https://cdn.jsdelivr.net/npm/yjs@13.6.27/+esm';
-  import { WebrtcProvider }
-         from 'https://cdn.jsdelivr.net/npm/y-webrtc@10.3.0/+esm';
-  // → si jamais votre proxy bloque jsDelivr, remplacez cdn.jsdelivr.net par
-  //    unpkg.com   (le chemin reste identique).
+  /* =====  Import dé-dupliqué  ===== */
+  import * as Y from 'yjs';   // ← résout vers l’URL fixée dans l’import-map
+  import {
+    WebrtcProvider
+  } from 'https://cdn.jsdelivr.net/npm/y-webrtc@10.3.0/dist/y-webrtc.mjs';
+  // y-webrtc fait lui-même `import "yjs"` → même instance que ci-dessus 👆
 
-  /* =========================================================================
-     2.  LIAISON Yjs ↔ Handsontable
-     ========================================================================= */
-  const ROOM = 'upc-handsontable-main';           // identifiant de salle P2P
-
-  // Patiente jusqu’à ce que votre tableau principal soit prêt
+  /* =====  Branche Handsontable ↔ Yjs  ===== */
+  const ROOM = 'upc-handsontable-main';
   document.addEventListener('DOMContentLoaded', () => {
-    if (!window.hotMain || !window.store || !window.loadTable) {
-      console.error('[Yjs] Handsontable pas encore initialisé');
-      return;
-    }
+    if (!window.hotMain || !window.store || !window.loadTable) return;
 
-    /* --------  Instanciation du document partagé  -------- */
     const ydoc     = new Y.Doc();
-    const provider = new WebrtcProvider(ROOM, ydoc, {  // options possibles :
-      signaling: [                                     // 3 serveurs publics
+    const provider = new WebrtcProvider(ROOM, ydoc, {
+      signaling: [
         'wss://signaling.yjs.dev',
         'wss://y-webrtc-signaling-eu.herokuapp.com',
         'wss://y-webrtc-signaling-us.herokuapp.com'
-      ],
-      maxConns: 20,                                    // limite pratique
-      filterBcConns: true                              // évite doublons onglets
+      ]
     });
     const yRows = ydoc.getArray('rows');
 
-    /* --------  Premier client : s’il n’y a encore rien, pousse les données  */
     if (yRows.length === 0 && window.store.main.length) {
       yRows.push([structuredClone(window.store.main)]);
     }
 
-    let silent = false;                               // évite les boucles locales
-
-    /* --------  Réception : Yjs → Handsontable  -------- */
+    let mute = false;
     yRows.observeDeep(() => {
-      if (silent) return;
-      silent = true;
-      const remote = yRows.get(0) || [];
-      loadTable('main', remote);                      // votre helper existant
-      silent = false;
+      if (mute) return;
+      mute = true;
+      loadTable('main', yRows.get(0) || []);
+      mute = false;
     });
 
-    /* --------  Émission : Handsontable → Yjs  -------- */
     hotMain.addHook('afterChange', (changes, source) => {
-      if (source === 'loadData' || silent) return;
-      silent = true;
+      if (source === 'loadData' || mute) return;
+      mute = true;
       ydoc.transact(() => {
-        yRows.delete(0, yRows.length);                // reset
+        yRows.delete(0, yRows.length);
         yRows.insert(0, [structuredClone(window.store.main)]);
       });
-      silent = false;
+      mute = false;
     });
 
-    console.info(`✅ Yjs + y-webrtc initialisés (room « ${ROOM} »)`);
+    console.info('✅ Yjs + y-webrtc prêt (aucun doublon)');
   });
 </script>
+
 
 </body>
 </html>
