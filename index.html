@@ -25,6 +25,18 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+  /* animation qui part d'un fond jaune puis revient au fond normal */
+  @keyframes highlightRow {
+    from { background-color: #fff59d; }   /* jaune clair */
+    to   { background-color: transparent; }
+  }
+  /* classe qu'on appliquera temporairement à chaque cellule de la ligne */
+  .ht-highlighted-cell {
+    animation: highlightRow 2s ease-out;
+  }
+</style>
+
+<style>
 html,body{height:100%;margin:0}
 body{background:#1f2937;color:#e2e8f0}
 .side-link{position:relative}
@@ -959,23 +971,59 @@ function clearComments(hot) {
     serverTimestamp
   } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
-  // --- 1) runRealtime() « écoute » chaque sous‐collection rows ---
   window.runRealtime = function() {
     ["main", "retained", "excluded"].forEach(tbl => {
       const colRef = collection(db, "tables", tbl, "rows");
       let echo = false;
 
       onSnapshot(colRef, snapshot => {
-        // Reconstruire rows[] à partir de chaque doc
-        const rows = [];
-        snapshot.docs.forEach(docSnap => {
-          const idx = Number(docSnap.id);
-          rows[idx] = docSnap.data();
+        // 1) Reconstruire le tableau 'rowsDense' trié
+        const raw = snapshot.docs.map(docSnap => ({
+          id: Number(docSnap.id),
+          data: docSnap.data()
+        }));
+        raw.sort((a, b) => a.id - b.id);
+        const rowsDense = raw.map(item => item.data);
+
+        // 2) Avant d'appeler loadTable, on va “mettre en surbrillance”
+        //    toutes les lignes modifiées dans snapshot.docChanges()
+        const hotInstance = tbl === "main"
+          ? hotMain
+          : tbl === "retained"
+            ? hotRetained
+            : hotExcluded;
+
+        snapshot.docChanges().forEach(change => {
+          if (change.type === "modified") {
+            const rowIndex = Number(change.doc.id);
+            // Appliquer la classe CSS .ht-highlighted-cell à chaque cellule de la ligne
+            for (let colIndex = 0; colIndex < hotInstance.countCols(); colIndex++) {
+              hotInstance.setCellMeta(rowIndex, colIndex, "className", "ht-highlighted-cell");
+            }
+          }
         });
+
+        // 3) On recharge le tableau avec toutes les lignes
         echo = true;
-        loadTable(tbl, rows);
+        loadTable(tbl, rowsDense);
+
+        // 4) Au bout de 2 secondes, on retire la classe CSS pour que l'animation
+        //    se termine correctement (sinon la classe resterait appliquée)
+        setTimeout(() => {
+          raw.forEach(item => {
+            const idx = item.id;
+            for (let c = 0; c < hotInstance.countCols(); c++) {
+              // Si la cellule avait la classe, on la réinitialise à vide
+              if (hotInstance.getCellMeta(idx, c).className === "ht-highlighted-cell") {
+                hotInstance.setCellMeta(idx, c, "className", "");
+              }
+            }
+          });
+          hotInstance.render();
+        }, 2000);
       });
 
+      // Même logique pour 'afterChange' que précédemment
       const hotInstance = tbl === "main"
         ? hotMain
         : tbl === "retained"
@@ -987,10 +1035,8 @@ function clearComments(hot) {
           echo = false;
           return;
         }
-        // Écrire en batch toutes les lignes modifiées
         let batch      = writeBatch(db);
         let operations = 0;
-
         changes.forEach(([rowIndex, prop, oldVal, newVal]) => {
           const rowData = hotInstance.getSourceDataAtRow(hotInstance.toPhysicalRow(rowIndex));
           const rowRef  = doc(db, "tables", tbl, "rows", String(rowIndex));
@@ -1004,11 +1050,8 @@ function clearComments(hot) {
             operations = 0;
           }
         });
-
-        // Mettre à jour un champ updatedAt sur le doc principal (optionnel)
         const metaRef = doc(db, "tables", tbl);
         batch.set(metaRef, { updatedAt: serverTimestamp() }, { merge: true });
-
         await batch.commit().catch(err => {
           console.error("Erreur écriture Firestore (afterChange) :", err);
         });
@@ -1016,28 +1059,20 @@ function clearComments(hot) {
     });
   };
 
-  // --- 2) syncTableToFirebase(tbl) « écrase » entièrement la sous‐collection rows ---
   window.syncTableToFirebase = async function(tbl) {
     try {
       console.log(`🚀 Début synchronisation Firestore pour "${tbl}"…`);
       const colRef = collection(db, "tables", tbl, "rows");
-
-      // 1) Lecture de tous les docs existants
       const snapshot = await getDocs(colRef);
-      const allDocs   = snapshot.docs; // Array<DocumentSnapshot>
+      const allDocs   = snapshot.docs;
+      const chunkSizeDelete = 100;
+      const chunkSizeWrite  = 100;
 
-      // Paramètres de découpe
-      const chunkSizeDelete = 100; // max opérations suppression par batch
-      const chunkSizeWrite  = 100; // max opérations écriture par batch
-
-      // 2) Suppression des documents existants par chunks
-      console.log(`✂️  Suppression des ${allDocs.length} anciens docs en chunks de ${chunkSizeDelete}…`);
+      // Suppression des anciens docs
       let batch = writeBatch(db);
       let ops   = 0;
-
       for (let i = 0; i < allDocs.length; i++) {
-        const docId = allDocs[i].id;
-        batch.delete(doc(db, "tables", tbl, "rows", docId));
+        batch.delete(doc(db, "tables", tbl, "rows", allDocs[i].id));
         ops++;
         if (ops >= chunkSizeDelete) {
           await batch.commit();
@@ -1045,22 +1080,15 @@ function clearComments(hot) {
           ops   = 0;
         }
       }
-      if (ops > 0) {
-        await batch.commit();
-      }
+      if (ops > 0) await batch.commit();
       console.log(`✅ Suppression terminée pour "${tbl}".`);
 
-      // 3) Écriture des nouvelles lignes (store[tbl])
+      // Écriture des nouvelles lignes
       const allRows = store[tbl] || [];
-      console.log(`✍️  Écriture des ${allRows.length} nouvelles lignes en chunks de ${chunkSizeWrite}…`);
-
       batch = writeBatch(db);
       ops   = 0;
       for (let idx = 0; idx < allRows.length; idx++) {
-        const rowData = allRows[idx];
-        const rowRef  = doc(db, "tables", tbl, "rows", String(idx));
-        batch.set(rowRef, rowData);
-
+        batch.set(doc(db, "tables", tbl, "rows", String(idx)), allRows[idx]);
         ops++;
         if (ops >= chunkSizeWrite) {
           await batch.commit();
@@ -1068,18 +1096,14 @@ function clearComments(hot) {
           ops   = 0;
         }
       }
-      if (ops > 0) {
-        await batch.commit();
-      }
+      if (ops > 0) await batch.commit();
       console.log(`✅ Écriture terminée pour "${tbl}".`);
-
       console.log(`🎉 Synchronisation Firestore réussie pour "${tbl}" (${allRows.length} lignes).`);
     } catch (err) {
       console.error("❌ Erreur de synchronisation Firebase :", err);
     }
   };
 
-  // --- 3) Au cas où l’auth est déjà active ---
   if (auth.currentUser) {
     window.runRealtime();
   }
