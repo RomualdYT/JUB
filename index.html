@@ -18,12 +18,13 @@
   <script src="https://cdn.jsdelivr.net/npm/handsontable@15.3.0/dist/handsontable.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/handsontable@15.3.0/languages/fr-FR.js"></script>
 
-  <!-- Collaboration temps-réel – version ESM (Option B) -->
+
+  <!-- ==== 1.  Module ESM unique : expose Y et WebrtcProvider ==== -->
   <script type="module">
     import * as Y from 'https://cdn.jsdelivr.net/npm/yjs@13.6.27/+esm';
     import { WebrtcProvider } from 'https://cdn.jsdelivr.net/npm/y-webrtc@10.3.0/+esm';
 
-    /* On rend les symboles globaux pour le reste des scripts non-module */
+    /* On rend les symboles globaux pour les scripts non-module */
     window.Y = Y;
     window.WebrtcProvider = WebrtcProvider;
   </script>
