@@ -1080,14 +1080,15 @@ document.querySelectorAll('#export-form input, #export-form select').forEach(e =
 });
 updateExportSummary();
 </script>
-  <!-- 1️⃣  Import map : même fichier Yjs pour tout le monde -->
+<!-- ① Import-map : UNE seule instance de Yjs pour toute la page -->
 <script type="importmap">
 {
   "imports": {
-    "yjs": "https://esm.sh/yjs@13.6.27"          /* 1 seule copie, ESM pur */
+    "yjs": "https://cdn.jsdelivr.net/npm/yjs@13.6.27/dist/yjs.mjs"
   }
 }
 </script>
+
 
 
 <script type="module">
