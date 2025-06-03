@@ -1090,53 +1090,70 @@ document.querySelectorAll('#export-form input, #export-form select').forEach(e =
 });
 updateExportSummary();
 </script>
+<!-- --- Collaboration temps-réel : Yjs + y-webrtc --- -->
 <script type="module">
-  import * as Y from 'https://esm.sh/yjs@14.3.0';
-  import { WebrtcProvider } from 'https://esm.sh/y-webrtc@10.1.8';
+  /* =========================================================================
+     1.  IMPORTS ESM 100 % FONCTIONNELS (pas de 404)
+     ========================================================================= */
+  import * as Y from 'https://cdn.jsdelivr.net/npm/yjs@14.3.0/dist/yjs.mjs';
+  import { WebrtcProvider }
+         from 'https://cdn.jsdelivr.net/npm/y-webrtc@10.3.0/dist/y-webrtc.mjs';
+  // → si jamais votre proxy bloque jsDelivr, remplacez cdn.jsdelivr.net par
+  //    unpkg.com   (le chemin reste identique).
 
-  // Nom unique de la « salle » : changez-le si vous voulez plusieurs tableaux distincts
-  const ROOM = 'upc-handsontable-main';
+  /* =========================================================================
+     2.  LIAISON Yjs ↔ Handsontable
+     ========================================================================= */
+  const ROOM = 'upc-handsontable-main';           // identifiant de salle P2P
 
+  // Patiente jusqu’à ce que votre tableau principal soit prêt
   document.addEventListener('DOMContentLoaded', () => {
-    // On vérifie que Handsontable est déjà instancié
     if (!window.hotMain || !window.store || !window.loadTable) {
-      console.error('Handsontable n’est pas encore prêt pour Yjs');
+      console.error('[Yjs] Handsontable pas encore initialisé');
       return;
     }
 
-    /* -------- 1.    Instanciation Yjs + WebRTC ---------- */
-    const ydoc      = new Y.Doc();
-    const provider  = new WebrtcProvider(ROOM, ydoc);      // signalisation via les serveurs publics y-webrtc
-    const yRows     = ydoc.getArray('rows');               // CRDT qui contiendra notre tableau complet
+    /* --------  Instanciation du document partagé  -------- */
+    const ydoc     = new Y.Doc();
+    const provider = new WebrtcProvider(ROOM, ydoc, {  // options possibles :
+      signaling: [                                     // 3 serveurs publics
+        'wss://signaling.yjs.dev',
+        'wss://y-webrtc-signaling-eu.herokuapp.com',
+        'wss://y-webrtc-signaling-us.herokuapp.com'
+      ],
+      maxConns: 20,                                    // limite pratique
+      filterBcConns: true                              // évite doublons onglets
+    });
+    const yRows = ydoc.getArray('rows');
 
-    /* -------- 2.    Premier client : pousse ses données initiales -------- */
+    /* --------  Premier client : s’il n’y a encore rien, pousse les données  */
     if (yRows.length === 0 && window.store.main.length) {
-      yRows.push([window.store.main]);                     // structure : [ [ rows ] ]
+      yRows.push([structuredClone(window.store.main)]);
     }
 
-    let suppress = false;                                  // évite la boucle locale <-> distante
+    let silent = false;                               // évite les boucles locales
 
-    /* -------- 3.    Réception : yjs → Handsontable ------ */
+    /* --------  Réception : Yjs → Handsontable  -------- */
     yRows.observeDeep(() => {
-      if (suppress) return;
-      suppress = true;
+      if (silent) return;
+      silent = true;
       const remote = yRows.get(0) || [];
-      loadTable('main', remote);                           // votre helper existant
-      suppress = false;
+      loadTable('main', remote);                      // votre helper existant
+      silent = false;
     });
 
-    /* -------- 4.    Émission : Handsontable → yjs ------- */
+    /* --------  Émission : Handsontable → Yjs  -------- */
     hotMain.addHook('afterChange', (changes, source) => {
-      if (source === 'loadData' || suppress) return;
-      suppress = true;
+      if (source === 'loadData' || silent) return;
+      silent = true;
       ydoc.transact(() => {
-        yRows.delete(0, yRows.length);                     // supprime tout (1 item)
-        yRows.insert(0, [window.store.main]);              // renvoie l'état à jour
+        yRows.delete(0, yRows.length);                // reset
+        yRows.insert(0, [structuredClone(window.store.main)]);
       });
-      suppress = false;
+      silent = false;
     });
 
-    console.info('✅ Yjs + y-webrtc initialisés (room :', ROOM, ')');
+    console.info(`✅ Yjs + y-webrtc initialisés (room « ${ROOM} »)`);
   });
 </script>
 
