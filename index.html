@@ -44,7 +44,7 @@ body{background:#1f2937;color:#e2e8f0}
 <!-- Yjs + y-webrtc : bundles ESM prêts pour le navigateur -->
 <script type="module">
   import * as Y from 'https://cdn.jsdelivr.net/npm/yjs@13.6.27/+esm';
-  import { WebrtcProvider } from 'https://esm.sh/y-webrtc@10.1.8';
+  import { WebrtcProvider } from 'https://cdn.jsdelivr.net/npm/y-webrtc@10.3.0/+esm';
   // On expose si vous voulez déboguer dans la console
   window.Y = Y;
   window.WebrtcProvider = WebrtcProvider;
@@ -1097,7 +1097,7 @@ updateExportSummary();
      ========================================================================= */
   import * as Y from 'https://cdn.jsdelivr.net/npm/yjs@13.6.27/+esm';
   import { WebrtcProvider }
-         from 'https://cdn.jsdelivr.net/npm/y-webrtc@10.3.0/dist/y-webrtc.mjs';
+         from 'https://cdn.jsdelivr.net/npm/y-webrtc@10.3.0/+esm';
   // → si jamais votre proxy bloque jsDelivr, remplacez cdn.jsdelivr.net par
   //    unpkg.com   (le chemin reste identique).
 
