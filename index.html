@@ -1080,15 +1080,20 @@ document.querySelectorAll('#export-form input, #export-form select').forEach(e =
 });
 updateExportSummary();
 </script>
-<!-- ① Import-map : UNE seule instance de Yjs pour toute la page -->
+<!-- 1️⃣ charge éventuellement le polyfill import-map pour les vieux navigateurs -->
+<script async
+        src="https://ga.jspm.io/npm:es-module-shims@1.9.0/dist/es-module-shims.js"></script>
+
+<!-- 2️⃣ import-map STRICT JSON (pas de virgule finale) -->
 <script type="importmap">
 {
   "imports": {
-    "yjs":      "https://cdn.jsdelivr.net/npm/yjs@13.6.27/dist/yjs.mjs",
-    "y-webrtc": "https://esm.sh/y-webrtc@10.3.0?external=yjs"
+    "yjs":      "https://esm.sh/yjs@13.6.27",
+    "y-webrtc": "https://esm.sh/y-webrtc@10.3.0?bundle&external=yjs"  /* ← ici */
   }
 }
 </script>
+
 
 
 
