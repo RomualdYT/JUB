@@ -24,6 +24,16 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<!-- Schedule-X (calendar) -->
+<script src="https://cdn.jsdelivr.net/npm/preact@10.23.2/dist/preact.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/preact@10.23.2/hooks/dist/hooks.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@preact/signals-core@1.8.0/dist/signals-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@preact/signals@1.3.0/dist/signals.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/preact@10.23.2/jsx-runtime/dist/jsxRuntime.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/preact@10.23.2/compat/dist/compat.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@schedule-x/calendar@2.2.0/dist/core.umd.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@schedule-x/theme-default@2.2.0/dist/index.css">
+
 <style>
 html,body{height:100%;margin:0}
 body{background:#1f2937;color:#e2e8f0}
@@ -35,6 +45,7 @@ body{background:#1f2937;color:#e2e8f0}
 .pager button{padding:.25rem .6rem;border:1px solid #475569;border-radius:.25rem}
 .pager span{min-width:6rem;text-align:center;display:inline-block}
 .ht-search-result{background:#f59e0b40!important;color:#fde68a!important}
+#decision-calendar{width:100%;height:800px;max-height:90vh}
 
 /* Animation fade-in */
 @keyframes fade-in { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: none; } }
@@ -87,6 +98,13 @@ body{background:#1f2937;color:#e2e8f0}
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
         </svg>
         <span class="ml-2 text-sm font-medium">Toutes les décisions</span>
+      </a>
+      <a href="#" data-page="calendar" class="side-link flex items-center w-full h-12 px-3 rounded hover:bg-gray-600 hover:text-white">
+        <!-- Calendrier -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        <span class="ml-2 text-sm font-medium">Calendrier des décisions</span>
       </a>
       <a href="#" data-page="retained" class="side-link flex items-center w-full h-12 px-3 rounded hover:bg-gray-600 hover:text-white">
         <!-- Retenues -->
@@ -183,8 +201,15 @@ body{background:#1f2937;color:#e2e8f0}
       <h3 class="text-gray-300 mb-2">Décisions par mois et juridiction</h3>
       <canvas id="chart-monthly"></canvas>
     </div>
-  </div>
+</div>
 
+</section>
+
+<!-- =========  PAGE CALENDRIER  ========= -->
+<section id="page-calendar" class="hidden p-6 space-y-4">
+  <div class="bg-gray-700 p-4 rounded-lg shadow">
+    <div id="decision-calendar"></div>
+  </div>
 </section>
 
 <!-- =========  TABLES (MAIN / RETAINED / EXCLUDED)  ========= -->
@@ -327,6 +352,7 @@ function applyTheme(th){
     jurChart.update();
     lineChart.update();
   }
+  if(decisionCalendar) decisionCalendar.setTheme(th);
   localStorage.setItem('theme', th);
 }
 themeBtn.addEventListener('click',()=>{
@@ -377,8 +403,8 @@ document.querySelectorAll('.side-link').forEach(l => {
 const pad = n => String(n).padStart(2,'0');
 const ddmmyyyy = d => `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
 
-/* ----------  Chart.js  ---------- */
-let jurChart, lineChart;
+/* ----------  Chart.js + Schedule-X  ---------- */
+let jurChart, lineChart, decisionCalendar;
 document.addEventListener('DOMContentLoaded', () => {
   const baseFont = getComputedStyle(document.body).fontFamily;
   Chart.defaults.font.family = baseFont;
@@ -412,6 +438,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   );
+  if(window.SXCalendar){
+    const { createCalendar, createViewMonthGrid } = window.SXCalendar;
+    decisionCalendar = createCalendar({
+      views:[createViewMonthGrid()],
+      defaultView:createViewMonthGrid(),
+      events:[]
+    });
+    decisionCalendar.render(document.getElementById('decision-calendar'));
+  }
   applyTheme(localStorage.getItem('theme')||'dark');
 });
 
@@ -461,6 +496,25 @@ function updateStats() {
     fill: false
   }));
   lineChart.update();
+  updateCalendar();
+}
+
+function updateCalendar(){
+  if(!window.SXCalendar) return;
+  const { createCalendar, createViewMonthGrid } = window.SXCalendar;
+  const events = store.main.map((r,i)=>{
+    const d = parseFrDate(r.Date||r.Dates) || new Date(r.Date||r.Dates);
+    if(isNaN(d)) return null;
+    return { id:i, title:r.Parties||r.Registry||'', start:d.toISOString().slice(0,10), end:d.toISOString().slice(0,10) };
+  }).filter(Boolean);
+  if(decisionCalendar) decisionCalendar.destroy();
+  decisionCalendar = createCalendar({
+    views:[createViewMonthGrid()],
+    defaultView:createViewMonthGrid(),
+    events
+  });
+  decisionCalendar.render(document.getElementById('decision-calendar'));
+  decisionCalendar.setTheme(document.documentElement.classList.contains('light')?'light':'dark');
 }
 
 /* ----------  Handsontable renderers  ---------- */
@@ -830,7 +884,10 @@ function loadTable(tbl,rows){
   if(tbl==='excluded') paginate(hotExcluded, rows, document.getElementById('pager-excluded'),'excluded');
   if(tbl!=='main' && store.main.length)
     paginate(hotMain, store.main, document.getElementById('pager-main'),'main');
-  if(tbl==='main') updateStats();
+  if(tbl==='main'){
+    updateStats();
+    updateCalendar();
+  }
 }
 function parseFile(file, tbl) {
   const fr = new FileReader();
