@@ -54,8 +54,8 @@ body{background:#1f2937;color:#e2e8f0}
 </style>
 
 <script type="module">
-  import * as Y from "https://cdn.jsdelivr.net/npm/yjs/+esm";
-  import { WebrtcProvider } from "https://cdn.jsdelivr.net/npm/y-webrtc/+esm";
+  import * as Y from "https://unpkg.com/yjs?module";
+  import { WebrtcProvider } from "https://unpkg.com/y-webrtc?module";
   const ydoc = new Y.Doc();
   const provider = new WebrtcProvider("jub-collab", ydoc);
   const ytext = ydoc.getText("note");
