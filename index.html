@@ -127,14 +127,15 @@ mark{background:#facc15;color:inherit}
     <kbd class="ml-2 text-xs text-gray-400">Ctrl K</kbd>
   </button>
   <div id="search-overlay" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-    <div class="bg-gray-800 rounded-lg w-96 p-4 shadow-lg">
-      <div class="flex items-center gap-2">
+    <div class="bg-gray-800 rounded-xl w-full max-w-lg p-4 shadow-2xl relative">
+      <button id="close-search" class="absolute top-2 right-2 text-gray-400 hover:text-white">&times;</button>
+      <div class="flex items-center gap-2 border-b border-gray-700 pb-2">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 text-gray-400">
           <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 15.75-2.489-2.489m0 0a3.375 3.375 0 1 0-4.773-4.773 3.375 3.375 0 0 0 4.774 4.774ZM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
         </svg>
         <input id="global-search" type="text" placeholder="Recherche globale dans les tableaux" class="flex-1 bg-transparent outline-none text-white placeholder-gray-400" />
       </div>
-      <div id="search-results" class="mt-2 max-h-60 overflow-auto"></div>
+      <div id="search-results" class="mt-2 max-h-60 overflow-auto divide-y divide-gray-700"></div>
     </div>
   </div>
   <button id="theme-toggle" class="ml-auto px-2 py-1 rounded transition">🌙</button>
@@ -734,12 +735,15 @@ const reappl = {
 /* ----------  Recherche globale dans l'en-tête  ---------- */
 const openSearchBtn = document.getElementById('open-search');
 const searchOverlay = document.getElementById('search-overlay');
+const closeSearchBtn = document.getElementById('close-search');
 const gInput   = document.getElementById('global-search');
 const gResults = document.getElementById('search-results');
 let selectedIndex = -1;
 
 function openSearch(){
   searchOverlay.classList.remove('hidden');
+  searchOverlay.classList.add('animate-fade-in');
+  setTimeout(()=>searchOverlay.classList.remove('animate-fade-in'),300);
   gInput.value = '';
   gResults.innerHTML = '';
   selectedIndex = -1;
@@ -751,6 +755,7 @@ function closeSearch(){
 }
 
 openSearchBtn?.addEventListener('click', openSearch);
+closeSearchBtn?.addEventListener('click', closeSearch);
 document.addEventListener('keydown', e=>{
   if((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); openSearch(); }
   if(e.key==='Escape' && !searchOverlay.classList.contains('hidden')){ closeSearch(); }
@@ -829,7 +834,7 @@ gInput?.addEventListener('input',()=>{
   }
   res.slice(0,50).forEach(r=>{
     const container=document.createElement('div');
-    container.className='px-2 py-1 cursor-pointer hover:bg-gray-600';
+    container.className='px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-700';
     const labelDiv=document.createElement('div');
     labelDiv.innerHTML=`[${r.tbl}] ${highlight(r.label,q)}`;
     const infoDiv=document.createElement('div');
