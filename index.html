@@ -777,8 +777,11 @@ function updateSelection(items){
 }
 
 function matchRow(row,q){
-  q = q.toLowerCase();
-  return Object.values(row).some(v=>String(v).toLowerCase().includes(q));
+  const terms = q.toLowerCase().split(/\s+/);
+  // all query words must appear in at least one cell
+  return terms.every(t =>
+    Object.values(row).some(v => String(v).toLowerCase().includes(t))
+  );
 }
 
 function navigateTo(tbl,idx){
