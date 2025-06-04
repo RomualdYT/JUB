@@ -26,4 +26,9 @@ node tests/stats.test.js        # updateStats
 ```
 
 Si tout se passe bien, chaque script affiche un message indiquant que tous les tests passent.
-Si un script dédié (par exemple via `npm test`) est ajouté, il permettra de lancer d'un coup toutes ces commandes.
+
+Vous pouvez aussi exécuter l'ensemble des tests d'un coup :
+
+```bash
+npm test
+```

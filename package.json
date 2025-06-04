@@ -1,0 +1,7 @@
+{
+  "name": "jub",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "node -e \"require('fs').readdirSync('./tests').filter(f=>f.endsWith('.test.js')).forEach(f=>require('./tests/'+f));\""
+  }
+}
