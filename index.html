@@ -205,15 +205,15 @@ mark{background:#facc15;color:inherit}
 
   <!-- Statistics -->
   <div id="stats-cards" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <div id="card-total" class="bg-gray-700 p-4 rounded-lg shadow">
+    <div id="card-total" class="bg-gray-700/50 backdrop-blur p-4 rounded-lg shadow">
       <h3 class="text-gray-300">Total des décisions</h3>
       <p id="stat-total" class="mt-2 text-3xl font-bold text-white">0</p>
     </div>
-    <div id="card-jur" class="bg-gray-700 p-4 rounded-lg shadow overflow-auto max-h-40">
+    <div id="card-jur" class="bg-gray-700/50 backdrop-blur p-4 rounded-lg shadow overflow-auto max-h-40">
       <h3 class="text-gray-300">Par juridiction</h3>
       <ul id="stat-jur" class="mt-2 text-white list-disc list-inside space-y-1"></ul>
     </div>
-    <div id="card-year" class="bg-gray-700 p-4 rounded-lg shadow overflow-auto max-h-40">
+    <div id="card-year" class="bg-gray-700/50 backdrop-blur p-4 rounded-lg shadow overflow-auto max-h-40">
       <h3 class="text-gray-300">Par année (3 dernières)</h3>
       <ul id="stat-year" class="mt-2 text-white list-disc list-inside space-y-1"></ul>
     </div>
@@ -280,7 +280,7 @@ mark{background:#facc15;color:inherit}
 </div>
 
 <!-- ===============  DRAWER EXPORT DOCX  =============== -->
-<div id="drawer-export" class="fixed top-0 right-0 z-50 h-full w-80 p-6 bg-gray-800 shadow-2xl transition-transform duration-300 transform translate-x-full overflow-auto rounded-l-xl border-l-4 border-gray-700">
+<div id="drawer-export" class="fixed top-0 right-0 z-50 h-full w-80 p-6 bg-gray-800/60 backdrop-blur shadow-2xl transition-transform duration-300 transform translate-x-full overflow-auto rounded-l-xl border-l-4 border-gray-700">
   <h5 class="text-base font-semibold text-white uppercase mb-4 flex items-center gap-2">
     <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
