@@ -135,6 +135,12 @@ mark{background:#facc15;color:inherit}
         </svg>
         <input id="global-search" type="text" placeholder="Recherche globale dans les tableaux" class="flex-1 bg-transparent outline-none text-white placeholder-gray-400" />
       </div>
+      <select id="search-filter" class="mt-2 w-full bg-gray-700 text-white p-1 rounded">
+        <option value="all">Tous les tableaux</option>
+        <option value="main">Toutes les décisions</option>
+        <option value="retained">Décisions retenues</option>
+        <option value="excluded">Décisions exclues</option>
+      </select>
       <div id="search-results" class="mt-2 max-h-60 overflow-auto divide-y divide-gray-700"></div>
     </div>
   </div>
@@ -738,6 +744,12 @@ const searchOverlay = document.getElementById('search-overlay');
 const closeSearchBtn = document.getElementById('close-search');
 const gInput   = document.getElementById('global-search');
 const gResults = document.getElementById('search-results');
+const gFilter  = document.getElementById('search-filter');
+let activeSearchFilter = gFilter?.value || 'all';
+gFilter?.addEventListener('change', ()=>{
+  activeSearchFilter = gFilter.value;
+  gInput.dispatchEvent(new Event('input'));
+});
 let selectedIndex = -1;
 
 function openSearch(){
@@ -745,6 +757,7 @@ function openSearch(){
   searchOverlay.classList.add('animate-fade-in');
   setTimeout(()=>searchOverlay.classList.remove('animate-fade-in'),300);
   gInput.value = '';
+  if(gFilter) gFilter.value = activeSearchFilter;
   gResults.innerHTML = '';
   selectedIndex = -1;
   setTimeout(()=>gInput.focus(),0);
@@ -808,7 +821,10 @@ gInput?.addEventListener('input',()=>{
   gResults.innerHTML='';
   if(!q){ selectedIndex=-1; return; }
   const res=[];
-  ['main','retained','excluded'].forEach(tbl=>{
+  const tablesToSearch = activeSearchFilter === 'all'
+      ? ['main','retained','excluded']
+      : [activeSearchFilter];
+  tablesToSearch.forEach(tbl=>{
     store[tbl].forEach((row,i)=>{
       if(matchRow(row,q)){
         const label = row["Numéro de l'affaire"] || row.Registry || row.Parties || `Ligne ${i+1}`;
