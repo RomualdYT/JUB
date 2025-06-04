@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html class="dark" lang="fr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>UPC • Handsontable + Charts + Save JSON</title>
 
 <!-- Tailwind -->
+<script>tailwind.config={darkMode:"class"}</script>
 <script src="https://cdn.tailwindcss.com"></script>
 
 <!-- Dépendances Handsontable -->
@@ -41,37 +42,37 @@ body{background:#1f2937;color:#e2e8f0}
 .animate-fade-in { animation: fade-in 0.3s; transition: opacity 0.5s; }
 </style>
 </head>
-<body class="flex h-full overflow-hidden">
+<body class="flex h-full overflow-hidden bg-gray-100 text-gray-900 dark:bg-gray-100 dark:bg-gray-900 dark:text-gray-100">
 
 <!-- ===============  SIDEBAR  =============== -->
-<aside id="sidebar" class="flex flex-col items-center w-40 h-full text-gray-300 bg-gradient-to-b from-gray-800 via-gray-700 to-gray-800 border-r border-gray-600 rounded pt-6">
+<aside id="sidebar" class="flex flex-col items-center w-40 h-full text-gray-700 dark:text-gray-300 bg-gradient-to-b from-gray-800 via-gray-700 to-gray-800 border-r border-gray-300 dark:border-gray-600 rounded pt-6">
 <div class="text-lg font-semibold text-white mb-2 flex items-center gap-2">
   Rémus
 </div>
-<hr class="border-gray-600 mb-4 w-4/5 mx-auto opacity-40">  <div class="w-full px-2">
+<hr class="border-gray-300 dark:border-gray-600 mb-4 w-4/5 mx-auto opacity-40">  <div class="w-full px-2">
     <div class="flex flex-col items-center w-full space-y-2">
-      <a href="#" data-page="home"     class="side-link active flex items-center w-full h-12 px-3 rounded hover:bg-gray-600 hover:text-white">
+      <a href="#" data-page="home"     class="side-link active flex items-center w-full h-12 px-3 rounded hover:bg-gray-600 hover:text-white dark:text-white">
         <!-- Accueil -->
         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12.75L12 3.75l9.75 9-1.5 1.5V19.5a1.5 1.5 0 01-1.5 1.5h-3.75a.75.75 0 01-.75-.75v-3.75a.75.75 0 00-.75-.75h-1.5a.75.75 0 00-.75.75v3.75a.75.75 0 01-.75.75H5.25a1.5 1.5 0 01-1.5-1.5v-5.25l-1.5-1.5z"/>
 </svg>
         <span class="ml-2 text-sm font-medium">Accueil</span>
       </a>
-      <a href="#" data-page="main"     class="side-link flex items-center w-full h-12 px-3 rounded hover:bg-gray-600 hover:text-white">
+      <a href="#" data-page="main"     class="side-link flex items-center w-full h-12 px-3 rounded hover:bg-gray-600 hover:text-white dark:text-white">
         <!-- Toutes les décisions -->
         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
         </svg>
         <span class="ml-2 text-sm font-medium">Toutes les décisions</span>
       </a>
-      <a href="#" data-page="retained" class="side-link flex items-center w-full h-12 px-3 rounded hover:bg-gray-600 hover:text-white">
+      <a href="#" data-page="retained" class="side-link flex items-center w-full h-12 px-3 rounded hover:bg-gray-600 hover:text-white dark:text-white">
         <!-- Retenues -->
         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
         </svg>
         <span class="ml-2 text-sm font-medium">Décisions retenues</span>
       </a>
-      <a href="#" data-page="excluded" class="side-link flex items-center w-full h-12 px-3 rounded hover:bg-gray-600 hover:text-white">
+      <a href="#" data-page="excluded" class="side-link flex items-center w-full h-12 px-3 rounded hover:bg-gray-600 hover:text-white dark:text-white">
         <!-- Exclues -->
         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -84,8 +85,12 @@ body{background:#1f2937;color:#e2e8f0}
 
 <!-- ===============  MAIN AREA  =============== -->
 <div class="flex-1 flex flex-col overflow-hidden">
-<header class="h-16 px-8 flex items-center border-b border-gray-600">
+<header class="h-16 px-8 flex items-center border-b border-gray-300 dark:border-gray-600">
   <h1 id="page-title" class="text-2xl font-bold text-rose-400">Accueil</h1>
+  <button id="theme-toggle" class="ml-auto p-2 rounded text-gray-700 hover:text-black dark:text-gray-300 dark:hover:text-white">
+    <svg id="icon-sun" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h1M3 12H2m15.364-7.364l.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
+    <svg id="icon-moon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+  </button>
 </header>
 <main class="flex-1 overflow-auto">
 
@@ -93,9 +98,9 @@ body{background:#1f2937;color:#e2e8f0}
 <section id="page-home" class="p-6 space-y-8">
 
   <!-- Import / Sauvegarde -->
-  <div class="bg-gray-700 p-6 rounded-lg shadow">
+  <div class="bg-gray-200 dark:bg-gray-700 p-6 rounded-lg shadow">
     <h2 class="text-xl font-semibold text-white">Importer les décisions</h2>
-    <p class="text-gray-300 mt-2">Importez vos classeurs ou rechargez une sauvegarde.</p>
+    <p class="text-gray-700 dark:text-gray-300 mt-2">Importez vos classeurs ou rechargez une sauvegarde.</p>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-4">
       <label class="group flex flex-col items-center justify-center h-44 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-400 hover:from-emerald-500 hover:to-emerald-300 cursor-pointer">
@@ -127,28 +132,28 @@ body{background:#1f2937;color:#e2e8f0}
 
   <!-- Statistics -->
   <div id="stats-cards" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <div id="card-total" class="bg-gray-700 p-4 rounded-lg shadow">
-      <h3 class="text-gray-300">Total des décisions</h3>
+    <div id="card-total" class="bg-gray-200 dark:bg-gray-700 p-4 rounded-lg shadow">
+      <h3 class="text-gray-700 dark:text-gray-300">Total des décisions</h3>
       <p id="stat-total" class="mt-2 text-3xl font-bold text-white">0</p>
     </div>
-    <div id="card-jur" class="bg-gray-700 p-4 rounded-lg shadow overflow-auto max-h-40">
-      <h3 class="text-gray-300">Par juridiction</h3>
+    <div id="card-jur" class="bg-gray-200 dark:bg-gray-700 p-4 rounded-lg shadow overflow-auto max-h-40">
+      <h3 class="text-gray-700 dark:text-gray-300">Par juridiction</h3>
       <ul id="stat-jur" class="mt-2 text-white list-disc list-inside space-y-1"></ul>
     </div>
-    <div id="card-year" class="bg-gray-700 p-4 rounded-lg shadow overflow-auto max-h-40">
-      <h3 class="text-gray-300">Par année (3 dernières)</h3>
+    <div id="card-year" class="bg-gray-200 dark:bg-gray-700 p-4 rounded-lg shadow overflow-auto max-h-40">
+      <h3 class="text-gray-700 dark:text-gray-300">Par année (3 dernières)</h3>
       <ul id="stat-year" class="mt-2 text-white list-disc list-inside space-y-1"></ul>
     </div>
   </div>
 
   <!-- Charts -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-    <div class="bg-gray-700 p-4 rounded-lg shadow">
-      <h3 class="text-gray-300 mb-2">Décisions par juridiction</h3>
+    <div class="bg-gray-200 dark:bg-gray-700 p-4 rounded-lg shadow">
+      <h3 class="text-gray-700 dark:text-gray-300 mb-2">Décisions par juridiction</h3>
       <canvas id="chart-jurisdictions" class="h-60"></canvas>
     </div>
-    <div class="bg-gray-700 p-4 rounded-lg shadow">
-      <h3 class="text-gray-300 mb-2">Décisions par mois et juridiction</h3>
+    <div class="bg-gray-200 dark:bg-gray-700 p-4 rounded-lg shadow">
+      <h3 class="text-gray-700 dark:text-gray-300 mb-2">Décisions par mois et juridiction</h3>
       <canvas id="chart-monthly"></canvas>
     </div>
   </div>
@@ -158,8 +163,8 @@ body{background:#1f2937;color:#e2e8f0}
 <!-- =========  TABLES (MAIN / RETAINED / EXCLUDED)  ========= -->
 <section id="page-main" class="hidden p-6 space-y-2">
   <div class="flex items-center gap-2">
-    <input id="search-main" placeholder="Rechercher…" class="px-2 py-1 rounded bg-gray-700 text-gray-200 w-60 focus:ring-amber-400 focus:border-amber-400">
-    <span id="count-main" class="text-sm text-gray-300"></span>
+    <input id="search-main" placeholder="Rechercher…" class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 w-60 focus:ring-amber-400 focus:border-amber-400">
+    <span id="count-main" class="text-sm text-gray-700 dark:text-gray-300"></span>
   </div>
   <div id="hot-main" class="ht-theme-main-dark w-full" style="height:500px;z-index:0"></div>
   <div id="pager-main" class="pager mt-2 flex items-center gap-4"></div>
@@ -167,8 +172,8 @@ body{background:#1f2937;color:#e2e8f0}
 
 <section id="page-retained" class="hidden p-6 space-y-3">
   <div class="flex items-center gap-2">
-    <input id="search-retained" placeholder="Rechercher…" class="px-2 py-1 rounded bg-gray-700 text-gray-200 w-60 focus:ring-emerald-400 focus:border-emerald-400">
-    <span id="count-retained" class="text-sm text-gray-300"></span>
+    <input id="search-retained" placeholder="Rechercher…" class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 w-60 focus:ring-emerald-400 focus:border-emerald-400">
+    <span id="count-retained" class="text-sm text-gray-700 dark:text-gray-300"></span>
     <button data-drawer-target="drawer-export" class="ml-auto px-4 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded">Exporter .docx</button>
   </div>
   <div id="hot-retained" class="ht-theme-main-dark w-full" style="height:500px;z-index:0"></div>
@@ -177,8 +182,8 @@ body{background:#1f2937;color:#e2e8f0}
 
 <section id="page-excluded" class="hidden p-6 space-y-2">
   <div class="flex items-center gap-2">
-    <input id="search-excluded" placeholder="Rechercher…" class="px-2 py-1 rounded bg-gray-700 text-gray-200 w-60 focus:ring-rose-400 focus:border-rose-400">
-    <span id="count-excluded" class="text-sm text-gray-300"></span>
+    <input id="search-excluded" placeholder="Rechercher…" class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 w-60 focus:ring-rose-400 focus:border-rose-400">
+    <span id="count-excluded" class="text-sm text-gray-700 dark:text-gray-300"></span>
   </div>
   <div id="hot-excluded" class="ht-theme-main-dark w-full" style="height:500px;z-index:0"></div>
   <div id="pager-excluded" class="pager mt-2 flex items-center gap-4"></div>
@@ -188,7 +193,7 @@ body{background:#1f2937;color:#e2e8f0}
 </div>
 
 <!-- ===============  DRAWER EXPORT DOCX  =============== -->
-<div id="drawer-export" class="fixed top-0 right-0 z-50 h-full w-80 p-6 bg-gray-800 shadow-2xl transition-transform duration-300 transform translate-x-full overflow-auto rounded-l-xl border-l-4 border-gray-700">
+<div id="drawer-export" class="fixed top-0 right-0 z-50 h-full w-80 p-6 bg-gray-300 dark:bg-gray-800 shadow-2xl transition-transform duration-300 transform translate-x-full overflow-auto rounded-l-xl border-l-4 border-gray-700">
   <h5 class="text-base font-semibold text-white uppercase mb-4 flex items-center gap-2">
     <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -198,48 +203,48 @@ body{background:#1f2937;color:#e2e8f0}
   <div id="export-summary" class="bg-amber-900/30 text-amber-200 rounded px-3 py-2 mb-4 text-sm font-medium shadow"></div>
   <hr class="my-4 border-gray-700">
 
-  <button type="button" data-drawer-hide="drawer-export" class="absolute top-4 right-4 text-gray-300 hover:text-white">
+  <button type="button" data-drawer-hide="drawer-export" class="absolute top-4 right-4 text-gray-700 dark:text-gray-300 hover:text-white dark:text-white">
     <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
   </button>
 
   <!-- formulaire export -->
   <form id="export-form" class="space-y-4">
-    <div class="bg-gray-700 rounded-lg p-4 shadow mb-2">
+    <div class="bg-gray-200 dark:bg-gray-700 rounded-lg p-4 shadow mb-2">
       <label for="export-filename" class="block text-sm font-semibold text-amber-300 mb-1">Nom du fichier</label>
-      <input type="text" id="export-filename" class="w-full px-3 py-2 bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition placeholder:text-gray-400" placeholder="Nom du fichier">
+      <input type="text" id="export-filename" class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition placeholder:text-gray-400" placeholder="Nom du fichier">
     </div>
-    <div class="bg-gray-700 rounded-lg p-4 shadow mb-2">
+    <div class="bg-gray-200 dark:bg-gray-700 rounded-lg p-4 shadow mb-2">
       <span class="block text-sm font-semibold text-amber-300 mb-2">Période de l’export</span>
       <div class="space-y-2">
-        <div class="flex items-center p-2 rounded hover:bg-gray-800 transition">
-          <input id="mode-all" name="mode" type="radio" value="all" checked class="w-4 h-4 text-amber-400 bg-gray-700 border-gray-600 focus:ring-amber-400 focus:ring-2 rounded">
+        <div class="flex items-center p-2 rounded hover:bg-gray-300 dark:bg-gray-800 transition">
+          <input id="mode-all" name="mode" type="radio" value="all" checked class="w-4 h-4 text-amber-400 bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-amber-400 focus:ring-2 rounded">
           <label for="mode-all" class="ml-2 text-amber-100">Tout le tableau</label>
         </div>
-        <div class="flex items-center p-2 rounded hover:bg-gray-800 transition">
-          <input id="mode-year" name="mode" type="radio" value="year" class="w-4 h-4 text-amber-400 bg-gray-700 border-gray-600 focus:ring-amber-400 focus:ring-2 rounded">
+        <div class="flex items-center p-2 rounded hover:bg-gray-300 dark:bg-gray-800 transition">
+          <input id="mode-year" name="mode" type="radio" value="year" class="w-4 h-4 text-amber-400 bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-amber-400 focus:ring-2 rounded">
           <label for="mode-year" class="ml-2 text-amber-100">Pour l'année</label>
         </div>
-        <div class="flex items-center p-2 rounded hover:bg-gray-800 transition">
-          <input id="mode-month" name="mode" type="radio" value="month" class="w-4 h-4 text-amber-400 bg-gray-700 border-gray-600 focus:ring-amber-400 focus:ring-2 rounded">
+        <div class="flex items-center p-2 rounded hover:bg-gray-300 dark:bg-gray-800 transition">
+          <input id="mode-month" name="mode" type="radio" value="month" class="w-4 h-4 text-amber-400 bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-amber-400 focus:ring-2 rounded">
           <label for="mode-month" class="ml-2 text-amber-100">Pour le mois</label>
         </div>
-        <div class="flex items-center p-2 rounded hover:bg-gray-800 transition">
-          <input id="mode-id" name="mode" type="radio" value="id" class="w-4 h-4 text-amber-400 bg-gray-700 border-gray-600 focus:ring-amber-400 focus:ring-2 rounded">
+        <div class="flex items-center p-2 rounded hover:bg-gray-300 dark:bg-gray-800 transition">
+          <input id="mode-id" name="mode" type="radio" value="id" class="w-4 h-4 text-amber-400 bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-amber-400 focus:ring-2 rounded">
           <label for="mode-id" class="ml-2 text-amber-100">Par numéro</label>
         </div>
       </div>
     </div>
-    <div id="field-year" class="bg-gray-700 rounded-lg p-4 shadow mb-2 hidden">
+    <div id="field-year" class="bg-gray-200 dark:bg-gray-700 rounded-lg p-4 shadow mb-2 hidden">
       <label for="form-year" class="block text-sm font-semibold text-amber-300 mb-1">Année</label>
-      <input type="number" id="form-year" class="w-full px-3 py-2 bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition placeholder:text-gray-400" placeholder="2025">
+      <input type="number" id="form-year" class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition placeholder:text-gray-400" placeholder="2025">
     </div>
-    <div id="field-month" class="bg-gray-700 rounded-lg p-4 shadow mb-2 hidden">
+    <div id="field-month" class="bg-gray-200 dark:bg-gray-700 rounded-lg p-4 shadow mb-2 hidden">
       <label for="form-month" class="block text-sm font-semibold text-amber-300 mb-1">Mois</label>
-      <input type="month" id="form-month" class="w-full px-3 py-2 bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition placeholder:text-gray-400">
+      <input type="month" id="form-month" class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition placeholder:text-gray-400">
     </div>
-    <div id="field-id" class="bg-gray-700 rounded-lg p-4 shadow mb-2 hidden">
+    <div id="field-id" class="bg-gray-200 dark:bg-gray-700 rounded-lg p-4 shadow mb-2 hidden">
       <label for="form-id" class="block text-sm font-semibold text-amber-300 mb-1">Numéro</label>
-      <input type="text" id="form-id" placeholder="App_12345/2025" class="w-full px-3 py-2 bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition placeholder:text-gray-400">
+      <input type="text" id="form-id" placeholder="App_12345/2025" class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition placeholder:text-gray-400">
     </div>
     <button type="submit" class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg text-lg font-semibold shadow transition">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 4v12"/></svg>
@@ -1118,6 +1123,6 @@ document.querySelectorAll('#export-form input, #export-form select').forEach(e =
 });
 updateExportSummary();
 </script>
-
+<script>const root=document.documentElement;const sun=document.getElementById("icon-sun");const moon=document.getElementById("icon-moon");function applyTheme(t){if(t==="light"){root.classList.remove("dark");sun.classList.add("hidden");moon.classList.remove("hidden");}else{root.classList.add("dark");sun.classList.remove("hidden");moon.classList.add("hidden");}localStorage.setItem("theme",t);}const saved=localStorage.getItem("theme")||"dark";applyTheme(saved);document.getElementById("theme-toggle").addEventListener("click",()=>{const cur=root.classList.contains("dark")?"dark":"light";applyTheme(cur==="dark"?"light":"dark")});</script>
 </body>
 </html>
