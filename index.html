@@ -873,10 +873,49 @@ function showToast(message, type = "success") {
   }, 3000);
 }
 
-// Pour parser une date DD/MM/YYYY correctement :
+// Parse une date en format français (ex. "15/02/2024", "15 février 2024", "15-2-24")
+// Retourne un objet Date ou `null` si la chaîne est invalide.
 function parseFrDate(str) {
-  const [j, m, a] = str.split(/[\/\-]/);
-  return new Date(`${a}-${m}-${j}T00:00:00`);
+  if (typeof str !== 'string') return null;
+  str = str.trim();
+
+  const monthNames = {
+    'janvier': 1, 'février': 2, 'fevrier': 2, 'mars': 3, 'avril': 4,
+    'mai': 5, 'juin': 6, 'juillet': 7, 'août': 8, 'aout': 8,
+    'septembre': 9, 'octobre': 10, 'novembre': 11, 'décembre': 12, 'decembre': 12
+  };
+
+  // Formats numériques : JJ/MM/AAAA ou JJ-MM-AAAA (AA optionnel)
+  let m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (m) {
+    let [ , j, mois, an ] = m.map(Number);
+    if (an < 100) an += 2000;
+    const d = new Date(an, mois - 1, j);
+    if (d.getFullYear() === an && d.getMonth() === mois - 1 && d.getDate() === j) {
+      return d;
+    }
+    return null;
+  }
+
+  // Formats avec nom de mois : JJ mois AAAA (AA optionnel)
+  m = str.match(/^(\d{1,2})\s+([\p{L}]+)/iu);
+  if (m) {
+    let j = parseInt(m[1], 10);
+    let reste = str.slice(m[0].length).trim();
+    const moisNom = m[2].toLowerCase();
+    const mois = monthNames[moisNom];
+    if (!mois) return null;
+    m = reste.match(/^(\d{2,4})$/);
+    if (!m) return null;
+    let an = parseInt(m[1], 10);
+    if (an < 100) an += 2000;
+    const d = new Date(an, mois - 1, j);
+    if (d.getFullYear() === an && d.getMonth() === mois - 1 && d.getDate() === j) {
+      return d;
+    }
+  }
+
+  return null;
 }
 
 // --- Ajoutez ceci ---
