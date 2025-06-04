@@ -711,6 +711,35 @@ const reappl = {
   excluded: attachSearch(hotExcluded, document.getElementById('search-excluded'), document.getElementById('count-excluded'),'excluded')
 };
 
+function setupFullSort(hot, key){
+  hot.addHook('beforeColumnSort',(cur,dest)=>{
+    if(!dest||!dest.length) return;
+    const {column,sortOrder}=dest[0];
+    const prop = hot.getSettings().columns[column]?.data;
+    if(!prop) return;
+    const val=v=>{
+      if(prop==='Date'||prop==='Dates'){
+        const d=parseFrDate(String(v))||new Date(v);
+        return isNaN(d)?-Infinity:d.getTime();
+      }
+      if(typeof v==='string') return v.toLowerCase();
+      return v||'';
+    };
+    store[key].sort((a,b)=>{
+      const va=val(a[prop]), vb=val(b[prop]);
+      if(va<vb) return sortOrder==='asc'? -1:1;
+      if(va>vb) return sortOrder==='asc'? 1:-1;
+      return 0;
+    });
+    paginate(hot, store[key], document.getElementById('pager-'+key), key);
+    return false;
+  });
+}
+['main','retained','excluded'].forEach(k=>{
+  const hot = k==='main'?hotMain:k==='retained'?hotRetained:hotExcluded;
+  setupFullSort(hot,k);
+});
+
 function computeFlags(){
   const toTokens=v=>String(v||'').split(/\s+/).filter(Boolean);
   const rSet = new Set(
