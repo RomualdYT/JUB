@@ -25,18 +25,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-  /* animation qui part d'un fond jaune puis revient au fond normal */
-  @keyframes highlightRow {
-    from { background-color: #fff59d; }   /* jaune clair */
-    to   { background-color: transparent; }
-  }
-  /* classe qu'on appliquera temporairement à chaque cellule de la ligne */
-  .ht-highlighted-cell {
-    animation: highlightRow 2s ease-out;
-  }
-</style>
-
-<style>
 html,body{height:100%;margin:0}
 body{background:#1f2937;color:#e2e8f0}
 .side-link{position:relative}
@@ -52,29 +40,6 @@ body{background:#1f2937;color:#e2e8f0}
 @keyframes fade-in { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: none; } }
 .animate-fade-in { animation: fade-in 0.3s; transition: opacity 0.5s; }
 </style>
-
-<script type="module">
-  import * as Y from "https://unpkg.com/yjs?module";
-  import { WebrtcProvider } from "https://unpkg.com/y-webrtc?module";
-  const ydoc = new Y.Doc();
-  const provider = new WebrtcProvider("jub-collab", ydoc);
-  const ytext = ydoc.getText("note");
-  document.addEventListener("DOMContentLoaded", () => {
-    const textarea = document.getElementById("collab-note");
-    function updateTextarea(){
-      const val = ytext.toString();
-      if (textarea.value !== val) textarea.value = val;
-    }
-    ytext.observe(updateTextarea);
-    textarea.addEventListener("input", () => {
-      ytext.delete(0, ytext.length);
-      ytext.insert(0, textarea.value);
-    });
-    updateTextarea();
-  });
-</script>
-
-
 </head>
 <body class="flex h-full overflow-hidden">
 
@@ -186,13 +151,6 @@ body{background:#1f2937;color:#e2e8f0}
       <h3 class="text-gray-300 mb-2">Décisions par mois et juridiction</h3>
       <canvas id="chart-monthly"></canvas>
     </div>
-
-  <div class="bg-gray-700 p-4 rounded-lg shadow">
-    <h3 class="text-gray-300 mb-2">Note collaborative</h3>
-    <textarea id="collab-note" class="w-full h-40 p-2 text-gray-900 rounded"></textarea>
-    <p class="text-gray-400 text-sm mt-2">Les modifications sont partagées en temps réel.</p>
-  </div>
-
   </div>
 
 </section>
@@ -772,7 +730,6 @@ function parseFile(file, tbl) {
     }
 
     loadTable(tbl, arr);
-
     // Toast selon le tableau importé
     let label = "tableau";
     if (tbl === "main") label = "Décisions JUB";
@@ -864,14 +821,14 @@ document.getElementById('btn-load-json').addEventListener('click', ()=>{
   document.getElementById('json-file-input').click();
 });
 /* ----------- 2. Chargement JSON avec restauration des commentaires ----------- */
-document.getElementById('json-file-input').addEventListener('change', e => {
-  const f = e.target.files[0]; if (!f) return;
+document.getElementById('json-file-input').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
   const fr = new FileReader();
   fr.onload = ev => {
     try {
       const data = JSON.parse(ev.target.result);
-      ['main','retained','excluded'].forEach(k => {
-        if (Array.isArray(data[k])) loadTable(k, data[k]);
+      ['main','retained','excluded'].forEach(k=>{
+        if(Array.isArray(data[k])) loadTable(k,data[k]);
       });
 
       // Fonction pour restaurer les commentaires
@@ -897,7 +854,7 @@ document.getElementById('json-file-input').addEventListener('change', e => {
       showToast("Erreur : fichier JSON invalide.", "error");
     }
   };
-  fr.readAsText(f, 'utf-8');
+  fr.readAsText(f,'utf-8');
 });
 
 /* ----------  Toast notifications  ---------- */
@@ -937,12 +894,6 @@ function clearComments(hot) {
   hot.render();
 }
 </script>
-
-
-
-
-
-
 
 <!-- =======================  EXPORT DOCX (MODULE)  ======================= -->
 <script type="module">
@@ -1098,12 +1049,12 @@ function updateExportSummary() {
   let txt = '';
   if (mode === 'all') {
     rows = [...store.retained];
-    txt = `Décisions exportées : ${rows.length}`;
+    txt = `Décisions exportées : ${rows.length}`;
   } else if (mode === 'year') {
     rows = [...store.retained];
     const y = parseInt(document.getElementById('form-year').value || 0, 10);
     rows = rows.filter(r => new Date(r.Dates).getFullYear() === y);
-    txt = y ? `Décisions pour l'année ${y} : ${rows.length}` : '';
+    txt = y ? `Décisions pour l'année ${y} : ${rows.length}` : '';
   } else if (mode === 'month') {
     rows = [...store.retained];
     const [y, m] = (document.getElementById('form-month').value || '').split('-').map(Number);
@@ -1111,7 +1062,7 @@ function updateExportSummary() {
       const d = new Date(r.Dates);
       return d.getFullYear() === y && d.getMonth() + 1 === m;
     });
-    txt = (y && m) ? `Décisions pour ${m}/${y} : ${rows.length}` : '';
+    txt = (y && m) ? `Décisions pour ${m}/${y} : ${rows.length}` : '';
   } else if (mode === 'id') {
     rows = [...store.retained];
     const id = document.getElementById('form-id').value.trim();
@@ -1119,7 +1070,7 @@ function updateExportSummary() {
       const a = String(r["Numéro de l'affaire"]).trim(), o = String(r["Numéro de l'ordonnance"]).trim();
       return a === id || o === id;
     });
-    txt = id ? `Décisions pour le numéro ${id} : ${rows.length}` : '';
+    txt = id ? `Décisions pour le numéro ${id} : ${rows.length}` : '';
   }
   document.getElementById('export-summary').textContent = txt;
 }
