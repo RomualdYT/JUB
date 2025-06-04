@@ -639,22 +639,6 @@ const hotRetained = new Handsontable(document.getElementById('hot-retained'), {
   colHeaders: hdrRet,
   columns: colsRet
 });
-// Mise à jour des indicateurs si on supprime une décision
-let removedRetained = [];
-hotRetained.addHook('beforeRemoveRow', (i, amt) => {
-  removedRetained = [];
-  for(let k=0;k<amt;k++){
-    removedRetained.push(hotRetained.getSourceDataAtRow(i+k));
-  }
-});
-hotRetained.addHook('afterRemoveRow', () => {
-  removedRetained.forEach(r => {
-    const idx = store.retained.indexOf(r);
-    if(idx>-1) store.retained.splice(idx,1);
-  });
-  removedRetained = [];
-  loadTable('retained', store.retained);
-});
 
 // Ajoute ce renderer pour la colonne Dates du tableau Excluded
 function formatDateLongFr(date) {
@@ -705,21 +689,6 @@ const hotExcluded = new Handsontable(document.getElementById('hot-excluded'), {
     {data:'Numéro de l\'affaire'},{data:'Numéro de l\'ordonnance'},{data:'Juridiction'},{data:'Motif',width:300},
     {data:'Lien',renderer:btnR('Lien','bg-violet-500/20')}
   ]
-});
-let removedExcluded = [];
-hotExcluded.addHook('beforeRemoveRow', (i, amt) => {
-  removedExcluded = [];
-  for(let k=0;k<amt;k++){
-    removedExcluded.push(hotExcluded.getSourceDataAtRow(i+k));
-  }
-});
-hotExcluded.addHook('afterRemoveRow', () => {
-  removedExcluded.forEach(r => {
-    const idx = store.excluded.indexOf(r);
-    if(idx>-1) store.excluded.splice(idx,1);
-  });
-  removedExcluded = [];
-  loadTable('excluded', store.excluded);
 });
 
 /* ----------  Recherche, pagination, store  ---------- */
