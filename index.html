@@ -430,7 +430,7 @@ function updateStats() {
 
   const byYear = {};
   rows.forEach(r => {
-    const d = new Date(r.Date||r.Dates);
+    const d = parseFrDate(r.Date||r.Dates) || new Date(r.Date||r.Dates);
     if(!isNaN(d)) byYear[d.getFullYear()] = (byYear[d.getFullYear()]||0) + 1;
   });
   const years = Object.keys(byYear).map(Number).sort((a,b)=>b-a).slice(0,3);
@@ -445,7 +445,7 @@ function updateStats() {
 
   const monthly = {}, juris = new Set();
   rows.forEach(r => {
-    const d = new Date(r.Date||r.Dates); if(isNaN(d)) return;
+    const d = parseFrDate(r.Date||r.Dates) || new Date(r.Date||r.Dates); if(isNaN(d)) return;
     const m = `${d.getFullYear()}-${pad(d.getMonth()+1)}`;
     const j = r.Court || r.Juridiction || '–';
     monthly[m] = monthly[m]||{};
@@ -1086,11 +1086,17 @@ document.getElementById('export-form').addEventListener('submit',e=>{
   const mode=document.querySelector('#export-form input[name="mode"]:checked').value;
   if(mode==='year'){
     const y=parseInt(document.getElementById('form-year').value||0,10);
-    rows=rows.filter(r=>new Date(r.Dates).getFullYear()===y);
+    rows=rows.filter(r=>{
+      const d=parseFrDate(r.Dates)||new Date(r.Dates);
+      return d.getFullYear()===y;
+    });
   }
   if(mode==='month'){
     const [y,m]=(document.getElementById('form-month').value||'').split('-').map(Number);
-    rows=rows.filter(r=>{const d=new Date(r.Dates);return d.getFullYear()===y&&d.getMonth()+1===m;});
+    rows=rows.filter(r=>{
+      const d=parseFrDate(r.Dates)||new Date(r.Dates);
+      return d.getFullYear()===y&&d.getMonth()+1===m;
+    });
   }
   if(mode==='id'){
     const id=document.getElementById('form-id').value.trim();
@@ -1101,7 +1107,8 @@ document.getElementById('export-form').addEventListener('submit',e=>{
   }
 
   const sections=rows.map(r=>{
-    const dt=ddmmyyyy(new Date(r.Dates));
+    const d=parseFrDate(r.Dates)||new Date(r.Dates);
+    const dt=ddmmyyyy(d);
     const caseNum=String(r["Numéro de l'affaire"]).trim();
     const ordNum=String(r["Numéro de l'ordonnance"]).trim();
     const link=String(r.Lien||'').trim();
@@ -1232,13 +1239,16 @@ function updateExportSummary() {
   } else if (mode === 'year') {
     rows = [...store.retained];
     const y = parseInt(document.getElementById('form-year').value || 0, 10);
-    rows = rows.filter(r => new Date(r.Dates).getFullYear() === y);
+    rows = rows.filter(r => {
+      const d = parseFrDate(r.Dates) || new Date(r.Dates);
+      return d.getFullYear() === y;
+    });
     txt = y ? `Décisions pour l'année ${y} : ${rows.length}` : '';
   } else if (mode === 'month') {
     rows = [...store.retained];
     const [y, m] = (document.getElementById('form-month').value || '').split('-').map(Number);
     rows = rows.filter(r => {
-      const d = new Date(r.Dates);
+      const d = parseFrDate(r.Dates) || new Date(r.Dates);
       return d.getFullYear() === y && d.getMonth() + 1 === m;
     });
     txt = (y && m) ? `Décisions pour ${m}/${y} : ${rows.length}` : '';
