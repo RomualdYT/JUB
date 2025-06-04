@@ -814,9 +814,17 @@ gInput?.addEventListener('input',()=>{
     return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
   }
   function highlight(str,q){
-    const i=str.toLowerCase().indexOf(q.toLowerCase());
-    if(i===-1) return escapeHtml(str);
-    return escapeHtml(str.slice(0,i))+`<mark>${escapeHtml(str.slice(i,i+q.length))}</mark>`+escapeHtml(str.slice(i+q.length));
+    const words=q.toLowerCase().split(/\s+/).filter(Boolean);
+    if(!words.length) return escapeHtml(str);
+    const escapeRegExp=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const re=new RegExp(words.map(escapeRegExp).join('|'),'gi');
+    let result='';
+    let last=0;
+    str.replace(re,(m,offset)=>{
+      result+=escapeHtml(str.slice(last,offset))+`<mark>${escapeHtml(m)}</mark>`;
+      last=offset+m.length;
+    });
+    return result+escapeHtml(str.slice(last));
   }
   res.slice(0,50).forEach(r=>{
     const div=document.createElement('div');
