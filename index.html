@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>UPC • Handsontable + Charts + Save JSON</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
 <!-- Tailwind -->
 <script src="https://cdn.tailwindcss.com"></script>
@@ -27,11 +27,11 @@
 
 <style>
 html,body{height:100%;margin:0}
-body{background:#1f2937;color:#e2e8f0;font-family:'Inter', sans-serif}
+body{background:#1f2937;color:#e2e8f0;font-family:'Inter','Helvetica Neue',Arial,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 .side-link{position:relative}
 .side-link.active{background:#4b5563}
 .side-link.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:#8b5cf6}
-.handsontable.ht-theme-main-dark .htCore{font-size:.8rem;color:#e2e8f0}
+.handsontable.ht-theme-main-dark .htCore{font-size:.8rem;color:#e2e8f0;font-variant-numeric:tabular-nums}
 .round-btn{@apply flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/30 group-hover:bg-emerald-500/50}
 .search-sub{@apply block text-xs text-gray-400}
 .pager button{padding:.25rem .6rem;border:none;border-radius:.25rem;box-shadow:0 1px 3px rgba(0,0,0,0.3)}
@@ -84,7 +84,7 @@ kbd{padding:0.1rem 0.3rem;border-radius:0.25rem;background-color:#374151;border:
 .light #theme-toggle{color:#1f2937}
 .light #theme-toggle:hover{background-color:#e5e7eb}
 .theme-transition *{transition:background-color .3s,color .3s,border-color .3s}
-.handsontable.ht-theme-main .htCore{font-size:.8rem}
+.handsontable.ht-theme-main .htCore{font-size:.8rem;font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body class="flex h-full overflow-hidden">
