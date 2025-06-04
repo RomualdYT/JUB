@@ -39,13 +39,34 @@ body{background:#1f2937;color:#e2e8f0}
 /* Animation fade-in */
 @keyframes fade-in { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: none; } }
 .animate-fade-in { animation: fade-in 0.3s; transition: opacity 0.5s; }
+.light body{background:#ffffff;color:#1f2937}
+.light #sidebar{background:#f9fafb;border-color:#d1d5db;color:#1f2937}
+.light #sidebar .side-link{color:#374151}
+.light #sidebar .side-link.active{background:#e5e7eb;color:#111827}
+.light header{background:#ffffff;border-color:#d1d5db}
+.light .bg-gray-700{background-color:#f3f4f6!important;color:#1f2937!important}
+.light .bg-gray-800{background-color:#e5e7eb!important}
+.light .bg-gray-900{background-color:#f9fafb!important}
+.light .border-gray-600,.light .border-gray-700{border-color:#d1d5db!important}
+.light .text-gray-300{color:#374151!important}
+.light .text-gray-200{color:#4b5563!important}
+.light .text-gray-400{color:#6b7280!important}
+.light .text-white{color:#1f2937!important}
+#logo{transition:color .3s}
+.light #logo{color:#111827}
+#theme-toggle{transition:background-color .3s,color .3s}
+#theme-toggle:hover{background-color:#374151}
+.light #theme-toggle{color:#1f2937}
+.light #theme-toggle:hover{background-color:#e5e7eb}
+.theme-transition *{transition:background-color .3s,color .3s,border-color .3s}
+.handsontable.ht-theme-main .htCore{font-size:.8rem}
 </style>
 </head>
 <body class="flex h-full overflow-hidden">
 
 <!-- ===============  SIDEBAR  =============== -->
 <aside id="sidebar" class="flex flex-col items-center w-40 h-full text-gray-300 bg-gradient-to-b from-gray-800 via-gray-700 to-gray-800 border-r border-gray-600 rounded pt-6">
-<div class="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+<div id="logo" class="text-lg font-semibold text-white mb-2 flex items-center gap-2">
   Rémus
 </div>
 <hr class="border-gray-600 mb-4 w-4/5 mx-auto opacity-40">  <div class="w-full px-2">
@@ -86,6 +107,7 @@ body{background:#1f2937;color:#e2e8f0}
 <div class="flex-1 flex flex-col overflow-hidden">
 <header class="h-16 px-8 flex items-center border-b border-gray-600">
   <h1 id="page-title" class="text-2xl font-bold text-rose-400">Accueil</h1>
+  <button id="theme-toggle" class="ml-auto px-2 py-1 rounded transition">🌙</button>
 </header>
 <main class="flex-1 overflow-auto">
 
@@ -253,6 +275,42 @@ body{background:#1f2937;color:#e2e8f0}
 
 <!-- =======================  SCRIPT GÉNÉRAL  ======================= -->
 <script>
+const themeBtn = document.getElementById('theme-toggle');
+function applyTheme(th){
+  const doc = document.documentElement;
+  doc.classList.add('theme-transition');
+  setTimeout(()=>doc.classList.remove('theme-transition'),300);
+  doc.classList.toggle('light', th==='light');
+  ['hot-main','hot-retained','hot-excluded'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.classList.toggle('ht-theme-main', th==='light');
+    el.classList.toggle('ht-theme-main-dark', th!=='light');
+  });
+  const icon = th==='light' ? '🌙' : '☀️';
+  themeBtn.textContent = icon;
+  themeBtn.classList.toggle('text-white', th!=='light');
+  const c = th==='light' ? '#1f2937' : '#fff';
+  if(window.jurChart){
+    Chart.defaults.color = c;
+    [jurChart,lineChart].forEach(ch=>{
+      ch.options.plugins.legend.labels.color = c;
+    });
+    lineChart.options.scales.x.title.color = c;
+    lineChart.options.scales.x.ticks.color = c;
+    lineChart.options.scales.y.title.color = c;
+    lineChart.options.scales.y.ticks.color = c;
+    jurChart.update();
+    lineChart.update();
+  }
+  localStorage.setItem('theme', th);
+}
+themeBtn.addEventListener('click',()=>{
+  applyTheme(document.documentElement.classList.contains('light')?'dark':'light');
+});
+document.addEventListener('DOMContentLoaded',()=>{
+  applyTheme(localStorage.getItem('theme')||'dark');
+});
 /* ----------  Drawer  ---------- */
 const exportBtn = document.querySelector('[data-drawer-target="drawer-export"]');
 const closeBtn  = document.querySelector('[data-drawer-hide="drawer-export"]');
@@ -329,6 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   );
+  applyTheme(localStorage.getItem('theme')||'dark');
 });
 
 /* ----------  Stats & charts update  ---------- */
