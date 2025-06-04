@@ -386,7 +386,10 @@ document.addEventListener('DOMContentLoaded',()=>{
 const exportBtn = document.querySelector('[data-drawer-target="drawer-export"]');
 const closeBtn  = document.querySelector('[data-drawer-hide="drawer-export"]');
 const drawer    = document.getElementById('drawer-export');
-exportBtn.addEventListener('click',  () => drawer.classList.remove('translate-x-full'));
+exportBtn.addEventListener('click',  () => {
+  drawer.classList.remove('translate-x-full');
+  updateExportSummary();
+});
 closeBtn.addEventListener('click', () => drawer.classList.add   ('translate-x-full'));
 
 /* ----------  Radios form export  ---------- */
@@ -1032,6 +1035,7 @@ function loadTable(tbl,rows){
   if(tbl!=='main' && store.main.length)
     paginate(hotMain, store.main, document.getElementById('pager-main'),'main',pageState.main||0);
   if(tbl==='main') updateStats();
+  if(tbl==='retained') updateExportSummary();
 }
 function parseFile(file, tbl) {
   const fr = new FileReader();
