@@ -323,11 +323,13 @@ mark{background:#facc15;color:inherit}
     </div>
     <div id="field-year" class="bg-gray-700 rounded-lg p-4 shadow mb-2 hidden">
       <label for="form-year" class="block text-sm font-semibold text-amber-300 mb-1">Année</label>
-      <input type="number" id="form-year" class="w-full px-3 py-2 bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition placeholder:text-gray-400" placeholder="2025">
+      <input type="text" list="years-list" id="form-year" class="w-full px-3 py-2 bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition placeholder:text-gray-400" placeholder="2025">
+      <datalist id="years-list"></datalist>
     </div>
     <div id="field-month" class="bg-gray-700 rounded-lg p-4 shadow mb-2 hidden">
       <label for="form-month" class="block text-sm font-semibold text-amber-300 mb-1">Mois</label>
-      <input type="month" id="form-month" class="w-full px-3 py-2 bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition placeholder:text-gray-400">
+      <input type="text" id="form-month" list="months-list" class="w-full px-3 py-2 bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition placeholder:text-gray-400" placeholder="2024-05">
+      <datalist id="months-list"></datalist>
     </div>
     <div id="field-id" class="bg-gray-700 rounded-lg p-4 shadow mb-2 hidden">
       <label for="form-id" class="block text-sm font-semibold text-amber-300 mb-1">Numéro</label>
@@ -388,6 +390,7 @@ const closeBtn  = document.querySelector('[data-drawer-hide="drawer-export"]');
 const drawer    = document.getElementById('drawer-export');
 exportBtn.addEventListener('click',  () => {
   drawer.classList.remove('translate-x-full');
+  populateExportLists();
   updateExportSummary();
 });
 closeBtn.addEventListener('click', () => drawer.classList.add   ('translate-x-full'));
@@ -1296,17 +1299,21 @@ document.getElementById('export-form').addEventListener('submit',e=>{
   const mode=document.querySelector('#export-form input[name="mode"]:checked').value;
   if(mode==='year'){
     const y=parseInt(document.getElementById('form-year').value||0,10);
-    rows=rows.filter(r=>{
-      const d=parseFrDate(r.Dates)||new Date(r.Dates);
-      return d.getFullYear()===y;
-    });
+    if(y){
+      rows=rows.filter(r=>{
+        const d=parseFrDate(r.Dates)||new Date(r.Dates);
+        return d.getFullYear()===y;
+      });
+    }
   }
   if(mode==='month'){
     const [y,m]=(document.getElementById('form-month').value||'').split('-').map(Number);
-    rows=rows.filter(r=>{
-      const d=parseFrDate(r.Dates)||new Date(r.Dates);
-      return d.getFullYear()===y&&d.getMonth()+1===m;
-    });
+    if(y&&m){
+      rows=rows.filter(r=>{
+        const d=parseFrDate(r.Dates)||new Date(r.Dates);
+        return d.getFullYear()===y&&d.getMonth()+1===m;
+      });
+    }
   }
   if(mode==='id'){
     const id=document.getElementById('form-id').value.trim();
@@ -1439,6 +1446,20 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <script>
+function populateExportLists(){
+  const years=new Set(), months=new Set();
+  store.retained.forEach(r=>{
+    const d=parseFrDate(r.Dates)||new Date(r.Dates);
+    if(isNaN(d)) return;
+    years.add(d.getFullYear());
+    months.add(`${d.getFullYear()}-${pad(d.getMonth()+1)}`);
+  });
+  const y=document.getElementById('years-list');
+  y.innerHTML=[...years].sort((a,b)=>b-a).map(v=>`<option value="${v}">`).join('');
+  const m=document.getElementById('months-list');
+  m.innerHTML=[...months].sort().map(v=>`<option value="${v}">`).join('');
+}
+
 function updateExportSummary() {
   const mode = document.querySelector('#export-form input[name="mode"]:checked').value;
   let rows;
@@ -1449,18 +1470,22 @@ function updateExportSummary() {
   } else if (mode === 'year') {
     rows = [...store.retained];
     const y = parseInt(document.getElementById('form-year').value || 0, 10);
-    rows = rows.filter(r => {
-      const d = parseFrDate(r.Dates) || new Date(r.Dates);
-      return d.getFullYear() === y;
-    });
+    if (y) {
+      rows = rows.filter(r => {
+        const d = parseFrDate(r.Dates) || new Date(r.Dates);
+        return d.getFullYear() === y;
+      });
+    }
     txt = y ? `Décisions pour l'année ${y} : ${rows.length}` : '';
   } else if (mode === 'month') {
     rows = [...store.retained];
     const [y, m] = (document.getElementById('form-month').value || '').split('-').map(Number);
-    rows = rows.filter(r => {
-      const d = parseFrDate(r.Dates) || new Date(r.Dates);
-      return d.getFullYear() === y && d.getMonth() + 1 === m;
-    });
+    if (y && m) {
+      rows = rows.filter(r => {
+        const d = parseFrDate(r.Dates) || new Date(r.Dates);
+        return d.getFullYear() === y && d.getMonth() + 1 === m;
+      });
+    }
     txt = (y && m) ? `Décisions pour ${m}/${y} : ${rows.length}` : '';
   } else if (mode === 'id') {
     rows = [...store.retained];
