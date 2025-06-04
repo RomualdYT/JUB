@@ -712,10 +712,21 @@ const reappl = {
 };
 
 function computeFlags(){
-  const rSet = new Set(store.retained.flatMap(r=>[r["Numéro de l'affaire"],r["Numéro de l'ordonnance"]]).filter(Boolean));
-  const eSet = new Set(store.excluded.flatMap(r=>[r["Numéro de l'affaire"],r["Numéro de l'ordonnance"]]).filter(Boolean));
+  const toTokens=v=>String(v||'').split(/\s+/).filter(Boolean);
+  const rSet = new Set(
+    store.retained.flatMap(r=>[
+      ...toTokens(r["Numéro de l'affaire"]),
+      ...toTokens(r["Numéro de l'ordonnance"])
+    ])
+  );
+  const eSet = new Set(
+    store.excluded.flatMap(r=>[
+      ...toTokens(r["Numéro de l'affaire"]),
+      ...toTokens(r["Numéro de l'ordonnance"])
+    ])
+  );
   store.main.forEach(row=>{
-    const ids = (row.Registry||'').split(/\s+/);
+    const ids = toTokens(row.Registry);
     row._flag = ids.some(t=>eSet.has(t))   ? 'excluded'
                : ids.some(t=>rSet.has(t))  ? 'retained'
                : null;
