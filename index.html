@@ -58,6 +58,8 @@ kbd{padding:0.1rem 0.3rem;border-radius:0.25rem;background-color:#374151;border:
 /* Animation fade-in */
 @keyframes fade-in { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: none; } }
 .animate-fade-in { animation: fade-in 0.3s; transition: opacity 0.5s; }
+@keyframes fade-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-10px); } }
+.animate-fade-out { animation: fade-out 0.3s forwards; transition: opacity 0.5s; }
 .light body{background:#ffffff;color:#1f2937}
 .light #sidebar{background:#f9fafb;border-color:#d1d5db;color:#1f2937}
 .light #sidebar .side-link{color:#374151}
@@ -812,7 +814,11 @@ function openSearch(){
 }
 
 function closeSearch(){
-  searchOverlay.classList.add('hidden');
+  searchOverlay.classList.add('animate-fade-out');
+  setTimeout(() => {
+    searchOverlay.classList.remove('animate-fade-out');
+    searchOverlay.classList.add('hidden');
+  }, 300);
 }
 
 openSearchBtn?.addEventListener('click', openSearch);
