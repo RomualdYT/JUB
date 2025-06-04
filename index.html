@@ -30,7 +30,7 @@ html,body{height:100%;margin:0}
 body{background:#1f2937;color:#e2e8f0;font-family:'Inter','Helvetica Neue',Arial,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 .side-link{position:relative}
 .side-link.active{background:#4b5563}
-.side-link.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:#8b5cf6}
+.side-link.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent-color,#8b5cf6)}
 .handsontable.ht-theme-main-dark .htCore{font-size:.8rem;color:#e2e8f0;font-variant-numeric:tabular-nums}
 .round-btn{@apply flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/30 group-hover:bg-emerald-500/50}
 .search-sub{@apply block text-xs text-gray-400}
@@ -426,18 +426,28 @@ document.querySelectorAll('#export-form input[name="mode"]').forEach(r => {
 });
 
 /* ----------  Navigation  ---------- */
+function activateSideLink(link){
+  document.querySelectorAll('.side-link').forEach(x => {
+    x.classList.remove('active','bg-gray-600','text-white');
+    x.style.removeProperty('--accent-color');
+  });
+  const svg = link.querySelector('svg');
+  if(svg){
+    const color = getComputedStyle(svg).color;
+    link.style.setProperty('--accent-color', color);
+  }
+  link.classList.add('active','bg-gray-600','text-white');
+  document.getElementById('page-title').textContent = link.textContent.trim();
+  document.querySelectorAll('[id^="page-"]').forEach(s => s.classList.add('hidden'));
+  document.getElementById('page-' + link.dataset.page).classList.remove('hidden');
+}
 document.querySelectorAll('.side-link').forEach(l => {
   l.addEventListener('click', e => {
     e.preventDefault();
-    document.querySelectorAll('.side-link').forEach(x =>
-      x.classList.remove('active','bg-gray-600','text-white')
-    );
-    l.classList.add('active','bg-gray-600','text-white');
-    document.getElementById('page-title').textContent = l.textContent.trim();
-    document.querySelectorAll('[id^="page-"]').forEach(s => s.classList.add('hidden'));
-    document.getElementById('page-' + l.dataset.page).classList.remove('hidden');
+    activateSideLink(l);
   });
 });
+activateSideLink(document.querySelector('.side-link.active'));
 
 /* ----------  Utils  ---------- */
 const pad = n => String(n).padStart(2,'0');
