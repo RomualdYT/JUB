@@ -217,12 +217,16 @@ body{background:#1f2937;color:#e2e8f0}
 </section>
 <section id="page-settings" class="hidden p-6 space-y-4">
   <h2 class="text-xl font-semibold text-white">Réglages</h2>
-  <div class="bg-gray-700 p-4 rounded shadow">
-    <h3 class="text-lg font-medium text-white mb-2">Contrôle des doublons</h3>
-    <p class="text-sm text-gray-300 mb-2">
+  <div class="bg-gray-700 p-4 rounded shadow space-y-2">
+    <h3 class="text-lg font-medium text-white">Contrôle des doublons</h3>
+    <p class="text-sm text-gray-300">
       Les numéros d'affaire ou d'ordonnance apparaissant plusieurs fois dans les tableaux Retenues et Exclues sont listés ci-dessous&nbsp;:
     </p>
-    <ul id="duplicate-list" class="list-disc list-inside text-gray-200 space-y-1"></ul>
+    <input id="duplicate-filter" placeholder="Filtrer…" class="px-2 py-1 rounded bg-gray-600 text-gray-200 w-full" />
+    <span id="duplicate-count" class="text-sm text-gray-300"></span>
+    <div class="border border-gray-600 rounded max-h-60 overflow-y-auto p-2">
+      <ul id="duplicate-list" class="text-gray-200 text-sm grid grid-cols-1 sm:grid-cols-2 gap-x-4 list-disc list-inside"></ul>
+    </div>
   </div>
 </section>
 
@@ -735,9 +739,11 @@ function computeDuplicates(){
     add(r["Numéro de l'ordonnance"],'Exclues');
   });
   const list=document.getElementById('duplicate-list');
+  const countSpan=document.getElementById('duplicate-count');
   if(!list) return;
   list.innerHTML='';
   const dups = Object.entries(map).filter(([_,v])=>v.count>1);
+  if(countSpan) countSpan.textContent = dups.length ? `${dups.length} doublon(s)` : 'Aucun doublon détecté';
   if(!dups.length){
     const li=document.createElement('li');
     li.textContent='Aucun doublon détecté';
@@ -749,7 +755,16 @@ function computeDuplicates(){
     li.textContent=`${num} ( ${[...v.tables].join(', ')} - ${v.count} lignes )`;
     list.appendChild(li);
   });
+  filterDuplicates();
 }
+
+function filterDuplicates(){
+  const q=(document.getElementById('duplicate-filter')?.value||'').toLowerCase();
+  document.querySelectorAll('#duplicate-list li').forEach(li=>{
+    li.style.display = li.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+document.getElementById('duplicate-filter')?.addEventListener('input', filterDuplicates);
 function applyFlags(hot){
   for(let r=0;r<hot.countRows();r++){
     const src = hot.getSourceDataAtRow(hot.toPhysicalRow(r))||{};
