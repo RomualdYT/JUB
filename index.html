@@ -628,7 +628,7 @@ const hdrRet = [
 ];
 const colsRet = hdrRet.map(h=>{
   if(h==='Dates') return { data:h, type:'date', dateFormat:'DD/MM/YYYY', correctFormat:true, datePickerConfig:{ format:'DD/MM/YYYY' }, renderer:coloredDateR };
-  if(h==='Lien')  return { data:h, renderer:linkR };
+  if(h==='Lien')  return { data:h, renderer:btnR('Lien','bg-violet-500/20') };
   if(h.startsWith('Apport')) return { data:h, width:300, renderer:apportRenderer };
   return { data:h, width:(h.includes('Apport')||h==='Parties'||h==='Traduction')?300:undefined };
 });
@@ -687,7 +687,7 @@ const hotExcluded = new Handsontable(document.getElementById('hot-excluded'), {
     { data:'Dates', renderer: excludedDateRenderer, editor: excludedDateEditor },
     {data:'Parties', width:350},
     {data:'Numéro de l\'affaire'},{data:'Numéro de l\'ordonnance'},{data:'Juridiction'},{data:'Motif',width:300},
-    {data:'Lien',renderer:linkR}
+    {data:'Lien',renderer:btnR('Lien','bg-violet-500/20')}
   ]
 });
 
