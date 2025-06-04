@@ -46,6 +46,15 @@ mark{background:#facc15;color:inherit}
 .light #search-overlay .chip{background-color:rgba(0,0,0,0.1);color:#374151}
 .light #search-overlay .chip.active{background-color:rgba(0,0,0,0.2)}
 
+/* Search trigger chip */
+#open-search.chip{background-color:rgba(255,255,255,0.1);border-radius:9999px;padding:.25rem .75rem;transition:background-color .2s}
+#open-search.chip:hover{background-color:rgba(255,255,255,0.2)}
+.light #open-search.chip{background-color:rgba(0,0,0,0.1);color:#374151}
+.light #open-search.chip:hover{background-color:rgba(0,0,0,0.2)}
+
+kbd{padding:0.1rem 0.3rem;border-radius:0.25rem;background-color:#374151;border:1px solid #4b5563}
+.light kbd{background-color:#e5e7eb;border-color:#d1d5db;color:#1f2937}
+
 /* Animation fade-in */
 @keyframes fade-in { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: none; } }
 .animate-fade-in { animation: fade-in 0.3s; transition: opacity 0.5s; }
@@ -127,13 +136,15 @@ mark{background:#facc15;color:inherit}
 <div class="flex-1 flex flex-col overflow-hidden">
 <header class="h-16 px-8 flex items-center border-b border-gray-600">
   <h1 id="page-title" class="text-2xl font-bold text-rose-400">Accueil</h1>
-  <button id="open-search" class="ml-6 flex items-center gap-2 text-gray-300 hover:text-white">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-      <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 15.75-2.489-2.489m0 0a3.375 3.375 0 1 0-4.773-4.773 3.375 3.375 0 0 0 4.774 4.774ZM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-    </svg>
-    <span class="hidden sm:inline">Recherche globale dans les tableaux</span>
-    <kbd class="ml-2 text-xs text-gray-400">Ctrl K</kbd>
-  </button>
+  <div class="flex-1 flex justify-center">
+    <button id="open-search" class="chip flex items-center gap-2 text-gray-300 hover:text-white">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 15.75-2.489-2.489m0 0a3.375 3.375 0 1 0-4.773-4.773 3.375 3.375 0 0 0 4.774 4.774ZM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+      </svg>
+      <span class="hidden sm:inline">Recherche globale dans les tableaux</span>
+      <kbd class="ml-2 text-xs">Ctrl K</kbd>
+    </button>
+  </div>
   <div id="search-overlay" class="hidden fixed inset-0 bg-black/40 backdrop-blur flex items-center justify-center z-50">
     <div class="search-box bg-gray-900/70 rounded-xl w-4/5 md:w-3/5 lg:w-1/2 p-4 shadow-2xl relative">
       <button id="close-search" class="absolute top-2 right-2 text-gray-400 hover:text-white">&times;</button>
