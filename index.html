@@ -777,11 +777,13 @@ function filterDuplicates(){
 }
 document.getElementById('duplicate-filter')?.addEventListener('input', filterDuplicates);
 function applyFlags(hot){
-  for(let r=0;r<hot.countRows();r++){
-    const src = hot.getSourceDataAtRow(hot.toPhysicalRow(r))||{};
-    hot.setCellMeta(r,0,'flag',src._flag);
-    hot.setCellMeta(r,1,'flag',src._flag);
-  }
+  hot.batch(()=>{
+    for(let r=0;r<hot.countRows();r++){
+      const src = hot.getSourceDataAtRow(hot.toPhysicalRow(r))||{};
+      hot.setCellMeta(r,0,'flag',src._flag);
+      hot.setCellMeta(r,1,'flag',src._flag);
+    }
+  });
   hot.render();
 }
 function paginate(hot, data, wrap, key) {
