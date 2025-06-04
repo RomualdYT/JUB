@@ -16,10 +16,12 @@ Ouvrez simplement `index.html` dans votre navigateur ou servez-le via un petit s
 
 ## Tests
 
-Le répertoire `tests` contient un test minimal pour la fonction `parseFrDate`. Pour l'exécuter :
+Le répertoire `tests` contient plusieurs scripts exécutables avec `node`. Chaque fichier vérifie une fonction clé de l'application :
 
 ```bash
-node tests/date.test.js
+node tests/date.test.js         # parseFrDate
+node tests/duplicates.test.js   # computeDuplicates
+node tests/stats.test.js        # updateStats
 ```
 
-Si tout se passe bien, le message `Tous les tests passent.` s'affichera.
+Si tout se passe bien, chaque script affiche un message indiquant que tous les tests passent.
