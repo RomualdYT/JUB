@@ -102,6 +102,13 @@ body{background:#1f2937;color:#e2e8f0}
         </svg>
         <span class="ml-2 text-sm font-medium">Décisions exclues</span>
       </a>
+      <a href="#" data-page="settings" class="side-link flex items-center w-full h-12 px-3 rounded hover:bg-gray-600 hover:text-white">
+        <!-- Réglages -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.983 2.25c.508 0 .99.293 1.21.75l.753 1.507a1.5 1.5 0 001.003.794l1.657.414a1.5 1.5 0 011.013 1.012l.414 1.657a1.5 1.5 0 00.794 1.003l1.507.753a1.5 1.5 0 01.75 1.21v1.516a1.5 1.5 0 01-.75 1.21l-1.507.753a1.5 1.5 0 00-.794 1.003l-.414 1.657a1.5 1.5 0 01-1.013 1.012l-1.657.414a1.5 1.5 0 00-1.003.794l-.753 1.507a1.5 1.5 0 01-1.21.75h-1.516a1.5 1.5 0 01-1.21-.75l-.753-1.507a1.5 1.5 0 00-1.003-.794l-1.657-.414a1.5 1.5 0 01-1.012-1.012l-.414-1.657a1.5 1.5 0 00-.794-1.003l-1.507-.753a1.5 1.5 0 01-.75-1.21V9.18c0-.508.293-.99.75-1.21l1.507-.753a1.5 1.5 0 00.794-1.003l.414-1.657a1.5 1.5 0 011.012-1.012l1.657-.414a1.5 1.5 0 001.003-.794l.753-1.507a1.5 1.5 0 011.21-.75h1.516z"/>
+        </svg>
+        <span class="ml-2 text-sm font-medium">Réglages</span>
+      </a>
     </div>
   </div>
 </aside>
@@ -208,6 +215,16 @@ body{background:#1f2937;color:#e2e8f0}
   <div id="hot-excluded" class="ht-theme-main-dark w-full" style="height:500px;z-index:0"></div>
   <div id="pager-excluded" class="pager mt-2 flex items-center gap-4"></div>
 </section>
+<section id="page-settings" class="hidden p-6 space-y-4">
+  <h2 class="text-xl font-semibold text-white">Réglages</h2>
+  <div class="bg-gray-700 p-4 rounded shadow">
+    <h3 class="text-lg font-medium text-white mb-2">Contrôle des doublons</h3>
+    <p class="text-sm text-gray-300 mb-2">
+      Les numéros d'affaire ou d'ordonnance apparaissant plusieurs fois dans les tableaux Retenues et Exclues sont listés ci-dessous&nbsp;:
+    </p>
+    <ul id="duplicate-list" class="list-disc list-inside text-gray-200 space-y-1"></ul>
+  </div>
+</section>
 
 </main>
 </div>
@@ -313,6 +330,7 @@ themeBtn.addEventListener('click',()=>{
 });
 document.addEventListener('DOMContentLoaded',()=>{
   applyTheme(localStorage.getItem('theme')||'dark');
+  computeDuplicates();
 });
 /* ----------  Drawer  ---------- */
 const exportBtn = document.querySelector('[data-drawer-target="drawer-export"]');
@@ -699,6 +717,39 @@ function computeFlags(){
                : null;
   });
 }
+function computeDuplicates(){
+  const map = {};
+  const add = (num, tbl)=>{
+    num = String(num||'').trim();
+    if(!num) return;
+    if(!map[num]) map[num] = {count:0,tables:new Set()};
+    map[num].count++;
+    map[num].tables.add(tbl);
+  };
+  store.retained.forEach(r=>{
+    add(r["Numéro de l'affaire"],'Retenues');
+    add(r["Numéro de l'ordonnance"],'Retenues');
+  });
+  store.excluded.forEach(r=>{
+    add(r["Numéro de l'affaire"],'Exclues');
+    add(r["Numéro de l'ordonnance"],'Exclues');
+  });
+  const list=document.getElementById('duplicate-list');
+  if(!list) return;
+  list.innerHTML='';
+  const dups = Object.entries(map).filter(([_,v])=>v.count>1);
+  if(!dups.length){
+    const li=document.createElement('li');
+    li.textContent='Aucun doublon détecté';
+    list.appendChild(li);
+    return;
+  }
+  dups.forEach(([num,v])=>{
+    const li=document.createElement('li');
+    li.textContent=`${num} ( ${[...v.tables].join(', ')} - ${v.count} lignes )`;
+    list.appendChild(li);
+  });
+}
 function applyFlags(hot){
   for(let r=0;r<hot.countRows();r++){
     const src = hot.getSourceDataAtRow(hot.toPhysicalRow(r))||{};
@@ -745,6 +796,7 @@ function paginate(hot, data, wrap, key) {
 function loadTable(tbl,rows){
   store[tbl] = rows;
   computeFlags();
+  computeDuplicates();
   if(tbl==='main')     paginate(hotMain    , rows, document.getElementById('pager-main')    ,'main');
   if(tbl==='retained') paginate(hotRetained, rows, document.getElementById('pager-retained'),'retained');
   if(tbl==='excluded') paginate(hotExcluded, rows, document.getElementById('pager-excluded'),'excluded');
