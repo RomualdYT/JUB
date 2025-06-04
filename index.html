@@ -834,6 +834,9 @@ function loadTable(tbl,rows){
 }
 function parseFile(file, tbl) {
   const fr = new FileReader();
+  fr.onerror = () => {
+    showToast('Erreur : impossible de lire le fichier.', 'error');
+  };
   fr.onload = e => {
     const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: true });
     const arr = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '', raw: true });
