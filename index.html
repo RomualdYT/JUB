@@ -117,6 +117,12 @@ body{background:#1f2937;color:#e2e8f0}
 <div class="flex-1 flex flex-col overflow-hidden">
 <header class="h-16 px-8 flex items-center border-b border-gray-600">
   <h1 id="page-title" class="text-2xl font-bold text-rose-400">Accueil</h1>
+  <div class="relative ml-6">
+    <input id="global-search" type="text" placeholder="Recherche..."
+           class="px-2 py-1 rounded text-black" />
+    <div id="search-results"
+         class="absolute z-50 mt-1 w-72 bg-gray-700 border border-gray-600 rounded shadow max-h-60 overflow-auto hidden"></div>
+  </div>
   <button id="theme-toggle" class="ml-auto px-2 py-1 rounded transition">🌙</button>
 </header>
 <main class="flex-1 overflow-auto">
@@ -711,6 +717,51 @@ const reappl = {
   excluded: attachSearch(hotExcluded, document.getElementById('search-excluded'), document.getElementById('count-excluded'),'excluded')
 };
 
+/* ----------  Recherche globale dans l'en-tête  ---------- */
+const gInput   = document.getElementById('global-search');
+const gResults = document.getElementById('search-results');
+
+function matchRow(row,q){
+  q = q.toLowerCase();
+  return Object.values(row).some(v=>String(v).toLowerCase().includes(q));
+}
+
+function navigateTo(tbl,idx){
+  document.querySelector(`.side-link[data-page="${tbl}"]`)?.click();
+  const hot = tbl==='main'?hotMain:tbl==='retained'?hotRetained:hotExcluded;
+  const pager = document.getElementById('pager-'+tbl);
+  const page = Math.floor(idx/10);
+  paginate(hot, store[tbl], pager, tbl, page);
+  setTimeout(()=>{
+    const r = idx%10;
+    hot.selectRows(r);
+    hot.scrollViewportTo(r,0);
+  },0);
+}
+
+gInput?.addEventListener('input',()=>{
+  const q = gInput.value.trim();
+  gResults.innerHTML='';
+  if(!q){ gResults.classList.add('hidden'); return; }
+  const res=[];
+  ['main','retained','excluded'].forEach(tbl=>{
+    store[tbl].forEach((row,i)=>{
+      if(matchRow(row,q)){
+        const label = row["Numéro de l'affaire"] || row.Registry || row.Parties || `Ligne ${i+1}`;
+        res.push({tbl,idx:i,label});
+      }
+    });
+  });
+  res.slice(0,50).forEach(r=>{
+    const div=document.createElement('div');
+    div.className='px-2 py-1 cursor-pointer hover:bg-gray-600';
+    div.textContent=`[${r.tbl}] ${r.label}`;
+    div.onclick=()=>{ navigateTo(r.tbl,r.idx); gResults.classList.add('hidden'); };
+    gResults.appendChild(div);
+  });
+  gResults.classList.toggle('hidden',!res.length);
+});
+
 function computeFlags(){
   const toTokens=v=>String(v||'').split(/\s+/).filter(Boolean);
   const rSet = new Set(
@@ -786,8 +837,9 @@ function applyFlags(hot){
   });
   hot.render();
 }
-function paginate(hot, data, wrap, key) {
-  const size = 10; let p = 0;
+const pageState = {main:0,retained:0,excluded:0};
+function paginate(hot, data, wrap, key, page = pageState[key] || 0) {
+  const size = 10; let p = page;
   const pages = () => Math.ceil(data.length / size) || 1;
 
   // Couleurs par tableau
@@ -818,6 +870,7 @@ function paginate(hot, data, wrap, key) {
       (() => { const s = document.createElement('span'); s.textContent = `Page ${p + 1}/${pages()}`; return s; })(),
       mkBtn('Suivant', () => { p++; draw(); }, p >= pages() - 1)
     );
+    pageState[key] = p;
   };
   draw();
 }
@@ -825,11 +878,11 @@ function loadTable(tbl,rows){
   store[tbl] = rows;
   computeFlags();
   computeDuplicates();
-  if(tbl==='main')     paginate(hotMain    , rows, document.getElementById('pager-main')    ,'main');
-  if(tbl==='retained') paginate(hotRetained, rows, document.getElementById('pager-retained'),'retained');
-  if(tbl==='excluded') paginate(hotExcluded, rows, document.getElementById('pager-excluded'),'excluded');
+  if(tbl==='main')     paginate(hotMain    , rows, document.getElementById('pager-main')    ,'main',0);
+  if(tbl==='retained') paginate(hotRetained, rows, document.getElementById('pager-retained'),'retained',0);
+  if(tbl==='excluded') paginate(hotExcluded, rows, document.getElementById('pager-excluded'),'excluded',0);
   if(tbl!=='main' && store.main.length)
-    paginate(hotMain, store.main, document.getElementById('pager-main'),'main');
+    paginate(hotMain, store.main, document.getElementById('pager-main'),'main',pageState.main||0);
   if(tbl==='main') updateStats();
 }
 function parseFile(file, tbl) {
