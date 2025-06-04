@@ -54,47 +54,26 @@ body{background:#1f2937;color:#e2e8f0}
 </style>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-  import { getFirestore } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyCcUT9tCIvN3xQxK-3NYHYYqEXMq80qrg4",
-    authDomain: "jub-project-9d177.firebaseapp.com",
-    databaseURL: "https://jub-project-9d177-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "jub-project-9d177",
-    storageBucket: "jub-project-9d177.appspot.com",
-    messagingSenderId: "217703639610",
-    appId: "1:217703639610:web:8a1b7906ef0499d446e303",
-    measurementId: "G-5G18M86TZ6"
-  };
-
-  // Initialise l’app Firebase
-  const app  = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db   = getFirestore(app);
-
-  // Expose auth et db au scope global pour qu'on puisse les utiliser ailleurs
-  window.auth = auth;
-  window.db   = db;
-
-  // Déclaration temporaire de runRealtime (sera redéfini plus bas)
-  window.runRealtime = () => {
-    console.warn("runRealtime pas encore défini");
-  };
-
-  // Auth anonyme puis lancement
-  signInAnonymously(auth)
-    .then(() => {
-      console.log("🔑 Auth anonyme OK");
-      if (window.runRealtime) {
-        window.runRealtime();
-      }
-    })
-    .catch(err => {
-      console.error("❌ Échec auth anonyme :", err);
+  import * as Y from "https://cdn.jsdelivr.net/npm/yjs/+esm";
+  import { WebrtcProvider } from "https://cdn.jsdelivr.net/npm/y-webrtc/+esm";
+  const ydoc = new Y.Doc();
+  const provider = new WebrtcProvider("jub-collab", ydoc);
+  const ytext = ydoc.getText("note");
+  document.addEventListener("DOMContentLoaded", () => {
+    const textarea = document.getElementById("collab-note");
+    function updateTextarea(){
+      const val = ytext.toString();
+      if (textarea.value !== val) textarea.value = val;
+    }
+    ytext.observe(updateTextarea);
+    textarea.addEventListener("input", () => {
+      ytext.delete(0, ytext.length);
+      ytext.insert(0, textarea.value);
     });
+    updateTextarea();
+  });
 </script>
+
 
 </head>
 <body class="flex h-full overflow-hidden">
@@ -207,6 +186,13 @@ body{background:#1f2937;color:#e2e8f0}
       <h3 class="text-gray-300 mb-2">Décisions par mois et juridiction</h3>
       <canvas id="chart-monthly"></canvas>
     </div>
+
+  <div class="bg-gray-700 p-4 rounded-lg shadow">
+    <h3 class="text-gray-300 mb-2">Note collaborative</h3>
+    <textarea id="collab-note" class="w-full h-40 p-2 text-gray-900 rounded"></textarea>
+    <p class="text-gray-400 text-sm mt-2">Les modifications sont partagées en temps réel.</p>
+  </div>
+
   </div>
 
 </section>
@@ -787,11 +773,6 @@ function parseFile(file, tbl) {
 
     loadTable(tbl, arr);
 
-// Dès que le tableau est chargé côté client, on pousse tout dans Firestore
-if (window.syncTableToFirebase) {
- window.syncTableToFirebase(tbl);
-}
-
     // Toast selon le tableau importé
     let label = "tableau";
     if (tbl === "main") label = "Décisions JUB";
@@ -883,17 +864,14 @@ document.getElementById('btn-load-json').addEventListener('click', ()=>{
   document.getElementById('json-file-input').click();
 });
 /* ----------- 2. Chargement JSON avec restauration des commentaires ----------- */
-document.getElementById('json-file-input').addEventListener('change', e=>{
-  const f = e.target.files[0]; if(!f) return;
+document.getElementById('json-file-input').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
   const fr = new FileReader();
   fr.onload = ev => {
     try {
       const data = JSON.parse(ev.target.result);
-      ['main','retained','excluded'].forEach(k=>{
-        if(Array.isArray(data[k])) loadTable(k,data[k]);
-		if (window.syncTableToFirebase) {
-           window.syncTableToFirebase(k);
-         }
+      ['main','retained','excluded'].forEach(k => {
+        if (Array.isArray(data[k])) loadTable(k, data[k]);
       });
 
       // Fonction pour restaurer les commentaires
@@ -919,7 +897,7 @@ document.getElementById('json-file-input').addEventListener('change', e=>{
       showToast("Erreur : fichier JSON invalide.", "error");
     }
   };
-  fr.readAsText(f,'utf-8');
+  fr.readAsText(f, 'utf-8');
 });
 
 /* ----------  Toast notifications  ---------- */
@@ -960,154 +938,6 @@ function clearComments(hot) {
 }
 </script>
 
-<script type="module">
-  import {
-    doc,
-    collection,
-    onSnapshot,
-    writeBatch,
-    getDocs,
-    setDoc,
-    serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
-
-  window.runRealtime = function() {
-    ["main", "retained", "excluded"].forEach(tbl => {
-      const colRef = collection(db, "tables", tbl, "rows");
-      let echo = false;
-
-      onSnapshot(colRef, snapshot => {
-        // 1) Reconstruire le tableau 'rowsDense' trié
-        const raw = snapshot.docs.map(docSnap => ({
-          id: Number(docSnap.id),
-          data: docSnap.data()
-        }));
-        raw.sort((a, b) => a.id - b.id);
-        const rowsDense = raw.map(item => item.data);
-
-        // 2) Avant d'appeler loadTable, on va “mettre en surbrillance”
-        //    toutes les lignes modifiées dans snapshot.docChanges()
-        const hotInstance = tbl === "main"
-          ? hotMain
-          : tbl === "retained"
-            ? hotRetained
-            : hotExcluded;
-
-        snapshot.docChanges().forEach(change => {
-          if (change.type === "modified") {
-            const rowIndex = Number(change.doc.id);
-            // Appliquer la classe CSS .ht-highlighted-cell à chaque cellule de la ligne
-            for (let colIndex = 0; colIndex < hotInstance.countCols(); colIndex++) {
-              hotInstance.setCellMeta(rowIndex, colIndex, "className", "ht-highlighted-cell");
-            }
-          }
-        });
-
-        // 3) On recharge le tableau avec toutes les lignes
-        echo = true;
-        loadTable(tbl, rowsDense);
-
-        // 4) Au bout de 2 secondes, on retire la classe CSS pour que l'animation
-        //    se termine correctement (sinon la classe resterait appliquée)
-        setTimeout(() => {
-          raw.forEach(item => {
-            const idx = item.id;
-            for (let c = 0; c < hotInstance.countCols(); c++) {
-              // Si la cellule avait la classe, on la réinitialise à vide
-              if (hotInstance.getCellMeta(idx, c).className === "ht-highlighted-cell") {
-                hotInstance.setCellMeta(idx, c, "className", "");
-              }
-            }
-          });
-          hotInstance.render();
-        }, 2000);
-      });
-
-      // Même logique pour 'afterChange' que précédemment
-      const hotInstance = tbl === "main"
-        ? hotMain
-        : tbl === "retained"
-          ? hotRetained
-          : hotExcluded;
-
-      hotInstance.addHook("afterChange", async (changes, source) => {
-        if (source === "loadData" || echo) {
-          echo = false;
-          return;
-        }
-        let batch      = writeBatch(db);
-        let operations = 0;
-        changes.forEach(([rowIndex, prop, oldVal, newVal]) => {
-          const rowData = hotInstance.getSourceDataAtRow(hotInstance.toPhysicalRow(rowIndex));
-          const rowRef  = doc(db, "tables", tbl, "rows", String(rowIndex));
-          batch.set(rowRef, rowData, { merge: true });
-          operations++;
-          if (operations >= 450) {
-            batch.commit().catch(err => {
-              console.error("Erreur écriture Firestore (afterChange) :", err);
-            });
-            batch      = writeBatch(db);
-            operations = 0;
-          }
-        });
-        const metaRef = doc(db, "tables", tbl);
-        batch.set(metaRef, { updatedAt: serverTimestamp() }, { merge: true });
-        await batch.commit().catch(err => {
-          console.error("Erreur écriture Firestore (afterChange) :", err);
-        });
-      });
-    });
-  };
-
-  window.syncTableToFirebase = async function(tbl) {
-    try {
-      console.log(`🚀 Début synchronisation Firestore pour "${tbl}"…`);
-      const colRef = collection(db, "tables", tbl, "rows");
-      const snapshot = await getDocs(colRef);
-      const allDocs   = snapshot.docs;
-      const chunkSizeDelete = 100;
-      const chunkSizeWrite  = 100;
-
-      // Suppression des anciens docs
-      let batch = writeBatch(db);
-      let ops   = 0;
-      for (let i = 0; i < allDocs.length; i++) {
-        batch.delete(doc(db, "tables", tbl, "rows", allDocs[i].id));
-        ops++;
-        if (ops >= chunkSizeDelete) {
-          await batch.commit();
-          batch = writeBatch(db);
-          ops   = 0;
-        }
-      }
-      if (ops > 0) await batch.commit();
-      console.log(`✅ Suppression terminée pour "${tbl}".`);
-
-      // Écriture des nouvelles lignes
-      const allRows = store[tbl] || [];
-      batch = writeBatch(db);
-      ops   = 0;
-      for (let idx = 0; idx < allRows.length; idx++) {
-        batch.set(doc(db, "tables", tbl, "rows", String(idx)), allRows[idx]);
-        ops++;
-        if (ops >= chunkSizeWrite) {
-          await batch.commit();
-          batch = writeBatch(db);
-          ops   = 0;
-        }
-      }
-      if (ops > 0) await batch.commit();
-      console.log(`✅ Écriture terminée pour "${tbl}".`);
-      console.log(`🎉 Synchronisation Firestore réussie pour "${tbl}" (${allRows.length} lignes).`);
-    } catch (err) {
-      console.error("❌ Erreur de synchronisation Firebase :", err);
-    }
-  };
-
-  if (auth.currentUser) {
-    window.runRealtime();
-  }
-</script>
 
 
 
