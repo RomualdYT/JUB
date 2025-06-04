@@ -21,7 +21,9 @@ Le répertoire `tests` contient plusieurs scripts exécutables avec `node`. Chaq
 ```bash
 node tests/date.test.js         # parseFrDate
 node tests/duplicates.test.js   # computeDuplicates
+node tests/global-search.test.js # matchRow
 node tests/stats.test.js        # updateStats
 ```
 
 Si tout se passe bien, chaque script affiche un message indiquant que tous les tests passent.
+Si un script dédié (par exemple via `npm test`) est ajouté, il permettra de lancer d'un coup toutes ces commandes.
