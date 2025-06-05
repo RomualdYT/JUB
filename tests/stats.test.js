@@ -65,23 +65,24 @@ function updateStatsData(rows){
   return {total:rows.length,byJur,byYear,years,jurChart,lineChart};
 }
 
-(function run(){
-  const store={
-    main:[
-      {Date:'15/02/2024',Court:'Tribunal A',Dates:'15/02/2024'},
-      {Date:'01/01/2023',Court:'Tribunal B',Dates:'01/01/2023'},
-      {Date:'20/03/2024',Court:'Tribunal A',Dates:'20/03/2024'},
-      {Date:'05/06/2022',Court:'Tribunal C',Dates:'05/06/2022'}
-    ]
-  };
-  const stats=updateStatsData(store.main);
-  assert.strictEqual(stats.total,4);
-  assert.strictEqual(stats.byJur['Tribunal A'],2);
-  assert.strictEqual(stats.byYear[2024],2);
-  assert.deepStrictEqual(stats.jurChart.labels,['Tribunal A','Tribunal B','Tribunal C']);
-  assert.deepStrictEqual(stats.jurChart.data,[2,1,1]);
-  assert.deepStrictEqual(stats.lineChart.labels,['2022-06','2023-01','2024-02','2024-03']);
-  const dsA=stats.lineChart.datasets.find(d=>d.label==='Tribunal A');
-  assert.deepStrictEqual(dsA.data,[0,0,1,1]);
-  console.log('Tous les tests updateStats passent.');
-})();
+describe('updateStatsData', function() {
+  it('calcule correctement les statistiques', function() {
+    const store={
+      main:[
+        {Date:'15/02/2024',Court:'Tribunal A',Dates:'15/02/2024'},
+        {Date:'01/01/2023',Court:'Tribunal B',Dates:'01/01/2023'},
+        {Date:'20/03/2024',Court:'Tribunal A',Dates:'20/03/2024'},
+        {Date:'05/06/2022',Court:'Tribunal C',Dates:'05/06/2022'}
+      ]
+    };
+    const stats=updateStatsData(store.main);
+    assert.strictEqual(stats.total,4);
+    assert.strictEqual(stats.byJur['Tribunal A'],2);
+    assert.strictEqual(stats.byYear[2024],2);
+    assert.deepStrictEqual(stats.jurChart.labels,['Tribunal A','Tribunal B','Tribunal C']);
+    assert.deepStrictEqual(stats.jurChart.data,[2,1,1]);
+    assert.deepStrictEqual(stats.lineChart.labels,['2022-06','2023-01','2024-02','2024-03']);
+    const dsA=stats.lineChart.datasets.find(d=>d.label==='Tribunal A');
+    assert.deepStrictEqual(dsA.data,[0,0,1,1]);
+  });
+});

@@ -22,27 +22,28 @@ function computeFlags(store){
   });
 }
 
-(function run(){
-  const store={
-    main:[
-      {Registry:'A123'},
-      {Registry:'A456'},
-      {Registry:'O1 A456'},
-      {Registry:'O1 A123'},
-      {Registry:'A789'}
-    ],
-    retained:[
-      {"Numéro de l'affaire":"A123","Numéro de l'ordonnance":"O1"}
-    ],
-    excluded:[
-      {"Numéro de l'affaire":"A456","Numéro de l'ordonnance":"O2"}
-    ]
-  };
-  computeFlags(store);
-  assert.strictEqual(store.main[0]._flag,'retained');
-  assert.strictEqual(store.main[1]._flag,'excluded');
-  assert.strictEqual(store.main[2]._flag,'excluded');
-  assert.strictEqual(store.main[3]._flag,'retained');
-  assert.strictEqual(store.main[4]._flag,null);
-  console.log('Tous les tests computeFlags passent.');
-})();
+describe('computeFlags', function() {
+  it('flague correctement les lignes', function() {
+    const store={
+      main:[
+        {Registry:'A123'},
+        {Registry:'A456'},
+        {Registry:'O1 A456'},
+        {Registry:'O1 A123'},
+        {Registry:'A789'}
+      ],
+      retained:[
+        {"Numéro de l'affaire":"A123","Numéro de l'ordonnance":"O1"}
+      ],
+      excluded:[
+        {"Numéro de l'affaire":"A456","Numéro de l'ordonnance":"O2"}
+      ]
+    };
+    computeFlags(store);
+    assert.strictEqual(store.main[0]._flag,'retained');
+    assert.strictEqual(store.main[1]._flag,'excluded');
+    assert.strictEqual(store.main[2]._flag,'excluded');
+    assert.strictEqual(store.main[3]._flag,'retained');
+    assert.strictEqual(store.main[4]._flag,null);
+  });
+});

@@ -22,21 +22,22 @@ function computeDuplicates(store){
     .map(([num,v])=>({num,count:v.count,tables:[...v.tables]}));
 }
 
-(function run(){
-  const store = {
-    retained:[
-      {"Numéro de l'affaire":"123","Numéro de l'ordonnance":"A1"},
-      {"Numéro de l'affaire":"124","Numéro de l'ordonnance":"A2"}
-    ],
-    excluded:[
-      {"Numéro de l'affaire":"125","Numéro de l'ordonnance":"A3"},
-      {"Numéro de l'affaire":"123","Numéro de l'ordonnance":"A4"}
-    ]
-  };
-  const res = computeDuplicates(store);
-  assert.strictEqual(res.length,1);
-  assert.strictEqual(res[0].num,'123');
-  assert.strictEqual(res[0].count,2);
-  assert.deepStrictEqual(res[0].tables.sort(),['Exclues','Retenues']);
-  console.log('Tous les tests computeDuplicates passent.');
-})();
+describe('computeDuplicates', function() {
+  it('detecte les doublons entre tableaux', function() {
+    const store = {
+      retained:[
+        {"Numéro de l'affaire":"123","Numéro de l'ordonnance":"A1"},
+        {"Numéro de l'affaire":"124","Numéro de l'ordonnance":"A2"}
+      ],
+      excluded:[
+        {"Numéro de l'affaire":"125","Numéro de l'ordonnance":"A3"},
+        {"Numéro de l'affaire":"123","Numéro de l'ordonnance":"A4"}
+      ]
+    };
+    const res = computeDuplicates(store);
+    assert.strictEqual(res.length,1);
+    assert.strictEqual(res[0].num,'123');
+    assert.strictEqual(res[0].count,2);
+    assert.deepStrictEqual(res[0].tables.sort(),['Exclues','Retenues']);
+  });
+});
