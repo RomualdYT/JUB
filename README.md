@@ -33,3 +33,15 @@ Vous pouvez aussi exécuter l'ensemble des tests d'un coup :
 ```bash
 npm test
 ```
+
+## Fonctionnement hors ligne
+
+L'application utilise un *service worker* (`service-worker.js`) qui met en cache
+`index.html`, les bibliothèques JavaScript et le fichier `upc-data.json` lorsque
+il est disponible. Après avoir visité la page une première fois avec une
+connexion réseau, ces ressources restent accessibles et l'interface continue de
+fonctionner même hors ligne.
+
+Pour tester ce mode, ouvrez la page dans votre navigateur, puis activez l'option
+"Offline" dans les outils de développement (onglet Réseau). Rechargez ensuite
+la page : le contenu doit rester opérationnel grâce au cache.
