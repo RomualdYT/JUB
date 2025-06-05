@@ -1085,7 +1085,10 @@ function loadTable(tbl,rows){
   if(tbl!=='main' && store.main.length)
     paginate(hotMain, store.main, document.getElementById('pager-main'),'main',pageState.main||0);
   if(tbl==='main') updateStats();
-  if(tbl==='retained') updateExportSummary();
+  if(tbl==='retained') {
+    populateExportLists();
+    updateExportSummary();
+  }
 }
 function parseFile(file, tbl) {
   const fr = new FileReader();
