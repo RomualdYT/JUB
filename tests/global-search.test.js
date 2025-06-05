@@ -8,9 +8,14 @@ function matchRow(row, q) {
   );
 }
 
-(function run(){
-  const row = { city: 'London', year: 2024 };
-  assert.ok(matchRow(row, 'London 2024'), 'should match across columns');
-  assert.ok(!matchRow(row, 'London 2023'), 'should fail if a term is missing');
-  console.log('Tous les tests matchRow passent.');
-})();
+describe('matchRow', function() {
+  it('match across columns', function() {
+    const row = { city: 'London', year: 2024 };
+    assert.ok(matchRow(row, 'London 2024'));
+  });
+
+  it('fails if a term is missing', function() {
+    const row = { city: 'London', year: 2024 };
+    assert.ok(!matchRow(row, 'London 2023'));
+  });
+});

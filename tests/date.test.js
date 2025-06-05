@@ -46,44 +46,49 @@ function isValidDate(d) {
   return d instanceof Date && !isNaN(d);
 }
 
-(function run() {
-  // Formats classiques
-  const d1 = parseFrDate('15/02/2024');
-  assert.ok(isValidDate(d1), 'date invalide pour 15/02/2024');
-  assert.strictEqual(d1.getFullYear(), 2024);
-  assert.strictEqual(d1.getMonth(), 1);
-  assert.strictEqual(d1.getDate(), 15);
+describe('parseFrDate', function() {
+  it('parse format jj/mm/aaaa', function() {
+    const d1 = parseFrDate('15/02/2024');
+    assert.ok(isValidDate(d1));
+    assert.strictEqual(d1.getFullYear(), 2024);
+    assert.strictEqual(d1.getMonth(), 1);
+    assert.strictEqual(d1.getDate(), 15);
+  });
 
-  const d2 = parseFrDate('15-02-2024');
-  assert.ok(isValidDate(d2), 'date invalide pour 15-02-2024');
-  assert.strictEqual(d2.getFullYear(), 2024);
-  assert.strictEqual(d2.getMonth(), 1);
-  assert.strictEqual(d2.getDate(), 15);
+  it('parse format avec tirets', function() {
+    const d2 = parseFrDate('15-02-2024');
+    assert.ok(isValidDate(d2));
+    assert.strictEqual(d2.getFullYear(), 2024);
+    assert.strictEqual(d2.getMonth(), 1);
+    assert.strictEqual(d2.getDate(), 15);
+  });
 
-  // Année sur deux chiffres
-  const d3 = parseFrDate('15/2/24');
-  assert.ok(isValidDate(d3), 'date invalide pour 15/2/24');
-  assert.strictEqual(d3.getFullYear(), 2024);
-  assert.strictEqual(d3.getMonth(), 1);
-  assert.strictEqual(d3.getDate(), 15);
+  it('parse annee sur deux chiffres', function() {
+    const d3 = parseFrDate('15/2/24');
+    assert.ok(isValidDate(d3));
+    assert.strictEqual(d3.getFullYear(), 2024);
+    assert.strictEqual(d3.getMonth(), 1);
+    assert.strictEqual(d3.getDate(), 15);
+  });
 
-  // Format avec nom de mois
-  const d4 = parseFrDate('15 février 2024');
-  assert.ok(isValidDate(d4), 'date invalide pour 15 février 2024');
-  assert.strictEqual(d4.getFullYear(), 2024);
-  assert.strictEqual(d4.getMonth(), 1);
-  assert.strictEqual(d4.getDate(), 15);
+  it('parse nom de mois', function() {
+    const d4 = parseFrDate('15 février 2024');
+    assert.ok(isValidDate(d4));
+    assert.strictEqual(d4.getFullYear(), 2024);
+    assert.strictEqual(d4.getMonth(), 1);
+    assert.strictEqual(d4.getDate(), 15);
+  });
 
-  // Dates invalides
-  assert.strictEqual(parseFrDate('31/02/2024'), null, '31/02/2024 devrait être invalide');
-  assert.strictEqual(parseFrDate('29/02/2023'), null, '29/02/2023 devrait être invalide');
+  it('return null for invalid dates', function() {
+    assert.strictEqual(parseFrDate('31/02/2024'), null);
+    assert.strictEqual(parseFrDate('29/02/2023'), null);
+  });
 
-  // Année bissextile valide
-  const d5 = parseFrDate('29/02/2024');
-  assert.ok(isValidDate(d5), 'date invalide pour 29/02/2024');
-  assert.strictEqual(d5.getFullYear(), 2024);
-  assert.strictEqual(d5.getMonth(), 1);
-  assert.strictEqual(d5.getDate(), 29);
-
-  console.log('Tous les tests passent.');
-})();
+  it('parse leap day correctly', function() {
+    const d5 = parseFrDate('29/02/2024');
+    assert.ok(isValidDate(d5));
+    assert.strictEqual(d5.getFullYear(), 2024);
+    assert.strictEqual(d5.getMonth(), 1);
+    assert.strictEqual(d5.getDate(), 29);
+  });
+});

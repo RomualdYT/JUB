@@ -2,6 +2,9 @@
   "name": "jub",
   "version": "1.0.0",
   "scripts": {
-    "test": "node -e \"require('fs').readdirSync('./tests').filter(f=>f.endsWith('.test.js')).forEach(f=>require('./tests/'+f));\""
+    "test": "mocha tests/*.test.js"
+  },
+  "devDependencies": {
+    "mocha": "^11.5.0"
   }
 }
