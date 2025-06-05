@@ -22,6 +22,7 @@ Le répertoire `tests` contient plusieurs scripts exécutables avec `node`. Chaq
 node tests/date.test.js         # parseFrDate
 node tests/duplicates.test.js   # computeDuplicates
 node tests/global-search.test.js # matchRow
+node tests/flags.test.js        # computeFlags
 node tests/stats.test.js        # updateStats
 ```
 
