@@ -282,7 +282,7 @@ kbd{padding:0.1rem 0.3rem;border-radius:0.25rem;background-color:var(--kbd-bg-da
     </div>
     <span id="count-main" class="text-sm text-gray-300"></span>
   </div>
-  <div id="hot-main" class="ht-theme-main-dark w-full" style="height:500px;z-index:0"></div>
+  <div id="hot-main" class="ht-theme-main-dark w-full" style="height:70vh;z-index:0"></div>
   <div id="pager-main" class="pager mt-2 flex items-center gap-4"></div>
 </section>
 
@@ -297,7 +297,7 @@ kbd{padding:0.1rem 0.3rem;border-radius:0.25rem;background-color:var(--kbd-bg-da
     <span id="count-retained" class="text-sm text-gray-300"></span>
       <button data-drawer-target="drawer-export" class="ml-auto px-4 py-1 bg-emerald-500 hover:bg-emerald-600 text-white keep-white rounded">Exporter .docx</button>
   </div>
-  <div id="hot-retained" class="ht-theme-main-dark w-full" style="height:500px;z-index:0"></div>
+  <div id="hot-retained" class="ht-theme-main-dark w-full" style="height:70vh;z-index:0"></div>
   <div id="pager-retained" class="pager mt-2 flex items-center gap-4"></div>
 </section>
 
@@ -311,7 +311,7 @@ kbd{padding:0.1rem 0.3rem;border-radius:0.25rem;background-color:var(--kbd-bg-da
     </div>
     <span id="count-excluded" class="text-sm text-gray-300"></span>
   </div>
-  <div id="hot-excluded" class="ht-theme-main-dark w-full" style="height:500px;z-index:0"></div>
+  <div id="hot-excluded" class="ht-theme-main-dark w-full" style="height:70vh;z-index:0"></div>
   <div id="pager-excluded" class="pager mt-2 flex items-center gap-4"></div>
 </section>
 <section id="page-settings" class="hidden p-6 space-y-4">
@@ -591,7 +591,7 @@ const apportRenderer = (inst,td,row,col,prop,val)=>{ Handsontable.dom.empty(td);
 const common = {
   licenseKey:'non-commercial-and-evaluation',
   colHeaders:true,rowHeaders:true,
-  height:500,width:'100%',
+  height:Math.max(window.innerHeight * 0.7, 300),width:'100%',
   dropdownMenu:true,filters:true,contextMenu:true,
   manualColumnResize:true,autoRowSize:true,autoColumnSize:{useHeaders:true},
   stretchH:'all',selectionMode:'multiple',
@@ -805,6 +805,13 @@ const hotExcluded = new Handsontable(document.getElementById('hot-excluded'), {
     {data:'Lien',renderer:btnR('Lien','bg-violet-500/20')}
   ]
 });
+
+function updateTableHeights(){
+  const h = Math.max(window.innerHeight * 0.7, 300);
+  [hotMain, hotRetained, hotExcluded].forEach(ht => ht.updateSettings({height:h}));
+}
+updateTableHeights();
+window.addEventListener('resize', updateTableHeights);
 
 /* ----------  Recherche, pagination, store  ---------- */
 const store = { main:[], retained:[], excluded:[] };
