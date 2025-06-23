@@ -195,20 +195,20 @@ document.getElementById('export-form').addEventListener('submit',e=>{
     const link=String(r.Lien||'').trim();
     const first=`${r.Juridiction}, Order dated ${dt}, ${r.Parties} (Case/ Registry number: ${caseNum}, [${ordNum} → ${link}])`;
     const braced=`{{${r.Juridiction}, Order dated ${dt}}}, ${r.Parties} (Case/ Registry number: ${caseNum}, [${ordNum} → ${link}])`;
-    const children=[new Paragraph({children:[new TextRun({text:first,font:'Aptos',size:22,color:'000000',shading:{type:ShadingType.CLEAR,fill:'CCFFCC'}})]})];
+    const children=[new Paragraph({children:[new TextRun({text:first,font:'Aptos',size:22,color:'000000',shading:{type:ShadingType.CLEAR,fill:'CCFFCC'},noProof:true})]})];
     [1,2,3].forEach(n=>{
       const rule=r[`Règle/ Article ${n}`]||r[`Règle/Article  ${n}`]||'';
       const lt=r[`Legal Text ${n}`]||r[`Legal text ${n}`]||'';
       const subj=r[`Sujet ${n}`]||'';
       const apport=sanitizeApport(r[`Apport ${n}`]||'');
       if(!rule&&!lt&&!subj&&!apport) return;
-      if(rule) children.push(new Paragraph({alignment:AlignmentType.JUSTIFIED,children:[new TextRun({text:rule,bold:true,font:'Aptos',size:22})]}));
-      if(lt) children.push(new Paragraph({alignment:AlignmentType.JUSTIFIED,children:[new TextRun({text:lt,bold:true,font:'Aptos',size:22})]}));
-      children.push(new Paragraph({alignment:AlignmentType.JUSTIFIED,children:[new TextRun({text:braced,font:'Aptos',size:22})]}));
-      if(subj||apport){(`${subj}: ${apport}`).split(/\r?\n/).forEach(line=>{children.push(new Paragraph({alignment:AlignmentType.JUSTIFIED,children:[new TextRun({text:line,font:'Aptos',size:22})]}));});}
+      if(rule) children.push(new Paragraph({alignment:AlignmentType.JUSTIFIED,children:[new TextRun({text:rule,bold:true,font:'Aptos',size:22,noProof:true})]}));
+      if(lt) children.push(new Paragraph({alignment:AlignmentType.JUSTIFIED,children:[new TextRun({text:lt,bold:true,font:'Aptos',size:22,noProof:true})]}));
+      children.push(new Paragraph({alignment:AlignmentType.JUSTIFIED,children:[new TextRun({text:braced,font:'Aptos',size:22,noProof:true})]}));
+      if(subj||apport){(`${subj}: ${apport}`).split(/\r?\n/).forEach(line=>{children.push(new Paragraph({alignment:AlignmentType.JUSTIFIED,children:[new TextRun({text:line,font:'Aptos',size:22,noProof:true})]}));});}
       children.push(new Paragraph({}));
     });
-    (r.Traduction||'').split(/\r?\n/).filter(Boolean).forEach(line=>{children.push(new Paragraph({children:[new TextRun({text:line,font:'Aptos',size:22})]}));});
+    (r.Traduction||'').split(/\r?\n/).filter(Boolean).forEach(line=>{children.push(new Paragraph({children:[new TextRun({text:line,font:'Aptos',size:22,noProof:true})]}));});
     return {properties:{},children};
   });
   const doc=new Document({sections});
