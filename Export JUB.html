@@ -93,6 +93,7 @@
 const store = { retained: [] };
 const pad = n => String(n).padStart(2,'0');
 const ddmmyyyy = d => `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+const sanitizeFilename = name => name.replace(/[\/\\:*?"<>|]/g,'');
 
 function parseFrDate(str){
   if (typeof str !== 'string') return null;
@@ -314,7 +315,7 @@ import {Document,Packer,Paragraph,TextRun,AlignmentType,ShadingType} from 'https
 
 document.getElementById('export-form').addEventListener('submit',e=>{
   e.preventDefault();
-  const filename=(document.getElementById('export-filename').value||'decisions_retenues')+'.docx';
+  const filename=sanitizeFilename(document.getElementById('export-filename').value||'decisions_retenues')+'.docx';
   let rows=[...store.retained];
   const mode=document.querySelector('#export-form input[name="mode"]:checked').value;
   if(mode==='year'){
