@@ -137,6 +137,7 @@ function parseFileRetained(file){
     document.getElementById('import-info').textContent = `Import réussi : ${arr.length} lignes`;
     populateExportLists();
     updateExportSummary();
+    updateExportFilename();
     updateApportWarnings();
   };
   fr.readAsArrayBuffer(file);
@@ -161,6 +162,22 @@ function populateExportLists(){
     monthInput.min=mArr[0];
     monthInput.max=mArr[mArr.length-1];
   }
+}
+
+function updateExportFilename(){
+  const mode=document.querySelector('#export-form input[name="mode"]:checked').value;
+  let name='Décisions retenues de la JUB - ';
+  if(mode==='all'){
+    name+='Tableau entier';
+  }else if(mode==='year'){
+    name+=document.getElementById('form-year').value||'';
+  }else if(mode==='month'){
+    const [y,m]=(document.getElementById('form-month').value||'').split('-');
+    if(y&&m) name+=`${pad(m)}-${y}`; else name+='';
+  }else if(mode==='id'){
+    name+=document.getElementById('form-id').value||'';
+  }
+  document.getElementById('export-filename').value=name;
 }
 
 function updateExportSummary(){
@@ -263,6 +280,7 @@ document.querySelectorAll('#export-form input, #export-form select').forEach(e=>
     document.getElementById('field-month').classList.toggle('hidden',document.getElementById('mode-month').checked===false);
     document.getElementById('field-id').classList.toggle('hidden',document.getElementById('mode-id').checked===false);
     updateExportSummary();
+    updateExportFilename();
   });
 });
 document.querySelectorAll('[data-tab]').forEach(btn=>{
@@ -278,6 +296,7 @@ document.querySelectorAll('[data-tab]').forEach(btn=>{
   });
 });
 updateExportSummary();
+updateExportFilename();
 updateApportWarnings();
 </script>
 
