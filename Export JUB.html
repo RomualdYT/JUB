@@ -189,21 +189,23 @@ function updateApportWarnings(){
   const items=[];
   let count=0;
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+  const startRe=/^\{["“]/;
+  const endRe=/["”]\}$/;
   const highlightInvalid = t => {
     const str = String(t);
-    if(!str.startsWith('{"')){
+    if(!startRe.test(str)){
       return `<mark>${esc(str.slice(0,2))}</mark>${esc(str.slice(2))}`;
     }
-    if(!str.endsWith('"}')){
+    if(!endRe.test(str)){
       return `${esc(str.slice(0,-2))}<mark>${esc(str.slice(-2))}</mark>`;
     }
-    let m = str.match(/\s+(?="\}$)/);
+    let m = str.match(/\s+(?=["”]\}$)/);
     if(m){
-      return `${esc(str.slice(0,m.index))}<mark>${esc(m[0])}</mark>"}`;
+      return `${esc(str.slice(0,m.index))}<mark>${esc(m[0])}</mark>${esc(str.slice(m.index+m[0].length))}`;
     }
-    m = str.match(/\.\s+"}$/);
+    m = str.match(/\.\s+["”]\}$/);
     if(m){
-      return `${esc(str.slice(0,m.index+1))}<mark>${esc(m[0].slice(1,-2))}</mark>"}`;
+      return `${esc(str.slice(0,m.index+1))}<mark>${esc(m[0].slice(1,-2))}</mark>${esc(str.slice(m.index+m[0].length))}`;
     }
     return esc(str);
   };
@@ -220,7 +222,7 @@ function updateApportWarnings(){
       }
       if(val){
         const t=String(val).trim();
-        const invalid=!t.startsWith('{"')||!t.endsWith('"}')||/\s"}$/.test(t)||/\.\s+"}/.test(t);
+        const invalid=!startRe.test(t)||!endRe.test(t)||/\s["”]\}$/.test(t)||/\.\s+["”]\}/.test(t);
         if(invalid) issues.push({html:true,str:`Apport ${n}: ${highlightInvalid(t)}`});
       }
     });
