@@ -1312,6 +1312,18 @@ function parseFrDate(str) {
   if (typeof str !== 'string') return null;
   str = str.trim();
 
+  // Format ISO aaaa-mm-jj ou aaaa-mm-jjTHH:MM[:SS]
+  let m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) {
+    const an = parseInt(m[1], 10);
+    const mois = parseInt(m[2], 10);
+    const j = parseInt(m[3], 10);
+    const d = new Date(an, mois - 1, j);
+    if (d.getFullYear() === an && d.getMonth() === mois - 1 && d.getDate() === j) {
+      return d;
+    }
+  }
+
   const monthNames = {
     'janvier': 1, 'février': 2, 'fevrier': 2, 'mars': 3, 'avril': 4,
     'mai': 5, 'juin': 6, 'juillet': 7, 'août': 8, 'aout': 8,
@@ -1319,7 +1331,7 @@ function parseFrDate(str) {
   };
 
   // Formats numériques : JJ/MM/AAAA ou JJ-MM-AAAA (AA optionnel)
-  let m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
   if (m) {
     let [ , j, mois, an ] = m.map(Number);
     if (an < 100) an += 2000;
@@ -1375,9 +1387,9 @@ function sanitizeApport(val){
   if(typeof val!== 'string') return val;
   let s = val.trim();
   s = s.replace(/\.\s+"}/g,'."}');
-  if(s && !s.startsWith('{"')) s = '{"' + s;
-  if(s && !s.endsWith('"}')) s = s + '"}';
-  return s;
+  s = s.replace(/^\{\s*"?/, '');
+  s = s.replace(/["}]+$/, '');
+  return '{"'+s+'"}';
 }
 
 document.getElementById('export-form').addEventListener('submit',e=>{

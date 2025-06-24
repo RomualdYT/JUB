@@ -5,13 +5,20 @@ function parseFrDate(str) {
   if (typeof str !== 'string') return null;
   str = str.trim();
 
+  let m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) {
+    const an = parseInt(m[1], 10), mois = parseInt(m[2], 10), j = parseInt(m[3], 10);
+    const d = new Date(an, mois - 1, j);
+    if (d.getFullYear() === an && d.getMonth() === mois - 1 && d.getDate() === j) return d;
+  }
+
   const monthNames = {
     'janvier': 1, 'février': 2, 'fevrier': 2, 'mars': 3, 'avril': 4,
     'mai': 5, 'juin': 6, 'juillet': 7, 'août': 8, 'aout': 8,
     'septembre': 9, 'octobre': 10, 'novembre': 11, 'décembre': 12, 'decembre': 12
   };
 
-  let m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
   if (m) {
     let [ , j, mois, an ] = m.map(Number);
     if (an < 100) an += 2000;
@@ -90,5 +97,13 @@ describe('parseFrDate', function() {
     assert.strictEqual(d5.getFullYear(), 2024);
     assert.strictEqual(d5.getMonth(), 1);
     assert.strictEqual(d5.getDate(), 29);
+  });
+
+  it('parse iso format', function(){
+    const d6 = parseFrDate('2025-03-17T00:00:00Z');
+    assert.ok(isValidDate(d6));
+    assert.strictEqual(d6.getFullYear(), 2025);
+    assert.strictEqual(d6.getMonth(), 2);
+    assert.strictEqual(d6.getDate(), 17);
   });
 });
