@@ -1576,7 +1576,7 @@ function updateExportSummary() {
         return d.getFullYear() === y;
       });
     }
-    txt = y ? `Décisions pour l'année ${y} : ${rows.length}` : '';
+    txt = y ? `Décisions pour l'année ${y} : ${rows.length}` : 'Merci d\'indiquer une année !';
   } else if (mode === 'month') {
     rows = [...store.retained];
     const [y, m] = (document.getElementById('form-month').value || '').split('-').map(Number);
@@ -1586,7 +1586,7 @@ function updateExportSummary() {
         return d.getFullYear() === y && d.getMonth() + 1 === m;
       });
     }
-    txt = (y && m) ? `Décisions pour ${m}/${y} : ${rows.length}` : '';
+    txt = (y && m) ? `Décisions pour ${m}/${y} : ${rows.length}` : 'Merci d\'indiquer un mois !';
   } else if (mode === 'id') {
     rows = [...store.retained];
     const id = document.getElementById('form-id').value.trim();
@@ -1594,7 +1594,7 @@ function updateExportSummary() {
       const a = String(r["Numéro de l'affaire"]).trim(), o = String(r["Numéro de l'ordonnance"]).trim();
       return a === id || o === id;
     });
-    txt = id ? `Décisions pour le numéro ${id} : ${rows.length}` : '';
+    txt = id ? `Décisions pour le numéro ${id} : ${rows.length}` : 'Merci d\'indiquer un numéro d\'affaire !';
   }
   document.getElementById('export-summary').textContent = txt;
 }
