@@ -82,7 +82,7 @@
       <div class="bg-gray-700/70 rounded-lg p-4 shadow-lg">
         <h2 class="text-lg font-semibold mb-2">Lignes avec apports mal formatés</h2>
         <p id="invalid-summary" class="text-sm mb-2 text-amber-200"></p>
-        <ul id="invalid-list" class="list-disc pl-4 text-sm space-y-2 text-red-200"></ul>
+        <div id="invalid-list" class="space-y-2 text-sm text-red-200"></div>
       </div>
     </div>
   </div>
@@ -190,7 +190,7 @@ function updateApportWarnings(){
   const summary=document.getElementById('invalid-summary');
   if(!list||!summary) return;
 
-  const items=[];
+  const byYear={};
   let count=0;
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
   const startRe=/^\{["“'’]/;
@@ -237,14 +237,24 @@ function updateApportWarnings(){
       const affaire=esc(r["Numéro de l'affaire"]||'');
       const d=parseFrDate(r.Dates)||new Date(r.Dates);
       const dt=!isNaN(d)?ddmmyyyy(d):'';
+      const y=!isNaN(d)?d.getFullYear():'';
       const info=`<div class="font-semibold">${parties||`Ligne ${i+1}`}</div>`+
                   `<div class="text-xs text-gray-400">${dt?dt+' - ':''}${ord}${ord&&affaire?' / ':''}${affaire}</div>`+
                  issues.map(it=>`<div class="text-xs break-all">${it.html?it.str:esc(it.str)}</div>`).join('');
-      items.push(`<li class="mb-2">${info}</li>`);
+      if(!byYear[y]) byYear[y]=[];
+      byYear[y].push(`<li class=\"mb-1\">${info}</li>`);
     }
   });
   summary.textContent=count?`${count} ligne${count>1?'s':''} problématique${count>1?'s':''}`:'Aucune anomalie détectée';
-  list.innerHTML=items.length?items.join(''):'<li>Aucune anomalie détectée</li>';
+  const years=Object.keys(byYear).filter(y=>y).sort((a,b)=>b-a);
+  if(years.length){
+    list.innerHTML=years.map(y=>
+      `<details><summary class=\"cursor-pointer\">${y} (${byYear[y].length})</summary>`+
+      `<ul class=\"list-disc pl-4 mt-1 space-y-1\">${byYear[y].join('')}</ul></details>`
+    ).join('');
+  }else{
+    list.innerHTML='<p>Aucune anomalie détectée</p>';
+  }
 }
 
 document.querySelectorAll('#export-form input, #export-form select').forEach(e=>{
