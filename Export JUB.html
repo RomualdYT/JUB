@@ -8,18 +8,25 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
-<body class="bg-gray-800 text-gray-200 p-6">
+<body class="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black text-gray-200 p-6">
   <div class="max-w-3xl mx-auto space-y-6">
   <h1 class="text-2xl font-semibold text-white">Export des décisions JUB</h1>
 
   <div>
     <label class="block mb-2">Fichier des décisions retenues (Excel ou CSV)</label>
-    <input id="file-retained" type="file" accept=".xlsx,.xls,.csv" class="text-gray-900">
+    <input id="file-retained" type="file" accept=".xlsx,.xls,.csv"
+           class="block w-full text-sm text-gray-200
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-full file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-amber-600 file:text-white
+                  hover:file:bg-amber-700
+                  bg-gray-900 rounded-md shadow">
     <p id="import-info" class="text-sm text-gray-400 mt-2"></p>
   </div>
 
-  <div class="bg-gray-700 rounded-lg p-4 shadow">
-    <div id="export-summary" class="bg-amber-900/30 text-amber-200 rounded px-3 py-2 mb-4 text-sm font-medium shadow"></div>
+  <div class="bg-gray-700/70 rounded-lg p-4 shadow-lg">
+    <div id="export-summary" class="bg-amber-800/40 text-amber-100 rounded px-3 py-2 mb-4 text-sm font-medium shadow"></div>
     <form id="export-form" class="space-y-4">
       <div>
         <label for="export-filename" class="block text-sm font-semibold text-amber-300 mb-1">Nom du fichier</label>
@@ -60,7 +67,7 @@
         <label for="form-id" class="block text-sm font-semibold text-amber-300 mb-1">Numéro</label>
         <input type="text" id="form-id" placeholder="App_12345/2025" class="w-full px-3 py-2 bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition placeholder:text-gray-400">
       </div>
-      <button type="submit" class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-cyan-500 hover:bg-cyan-600 text-white keep-white rounded-lg text-lg font-semibold shadow transition">
+      <button type="submit" class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-amber-600 hover:bg-amber-700 text-white keep-white rounded-lg text-lg font-semibold shadow transition">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 4v12"/></svg>
         Lancer l'export
       </button>
@@ -220,6 +227,9 @@ document.getElementById('export-form').addEventListener('submit',e=>{
   });
 });
 </script>
+  </div>
+  <div class="fixed bottom-2 right-4 text-xs text-gray-400">
+    Code réalisé par Romuald Buisson, pour les futurs stagiaires sur la JUB !
   </div>
 </body>
 </html>
