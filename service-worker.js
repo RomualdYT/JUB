@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jub-cache-v1';
+const CACHE_NAME = 'jub-cache-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -10,7 +10,8 @@ const ASSETS = [
   'https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js',
   'https://cdn.jsdelivr.net/npm/handsontable@15.3.0/languages/fr-FR.js',
   'https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js',
-  'https://cdn.jsdelivr.net/npm/chart.js'
+  'https://cdn.jsdelivr.net/npm/chart.js',
+  'https://cdn.jsdelivr.net/npm/docx@9.5.0/+esm'
 ];
 
 self.addEventListener('install', event => {
