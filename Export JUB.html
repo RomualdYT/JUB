@@ -189,6 +189,24 @@ function updateApportWarnings(){
   const items=[];
   let count=0;
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+  const highlightInvalid = t => {
+    const str = String(t);
+    if(!str.startsWith('{"')){
+      return `<mark>${esc(str.slice(0,2))}</mark>${esc(str.slice(2))}`;
+    }
+    if(!str.endsWith('"}')){
+      return `${esc(str.slice(0,-2))}<mark>${esc(str.slice(-2))}</mark>`;
+    }
+    let m = str.match(/\s+(?="\}$)/);
+    if(m){
+      return `${esc(str.slice(0,m.index))}<mark>${esc(m[0])}</mark>"}`;
+    }
+    m = str.match(/\.\s+"}$/);
+    if(m){
+      return `${esc(str.slice(0,m.index+1))}<mark>${esc(m[0].slice(1,-2))}</mark>"}`;
+    }
+    return esc(str);
+  };
 
   store.retained.forEach((r,i)=>{
     const issues=[];
@@ -197,13 +215,13 @@ function updateApportWarnings(){
       const lt=r[`Legal Text ${n}`]||r[`Legal text ${n}`]||'';
       const val=r[`Apport ${n}`];
       if(rule && lt && !val){
-        issues.push(`Apport ${n} manquant`);
+        issues.push({html:false,str:`Apport ${n} manquant`});
         return;
       }
       if(val){
         const t=String(val).trim();
         const invalid=!t.startsWith('{"')||!t.endsWith('"}')||/\s"}$/.test(t)||/\.\s+"}/.test(t);
-        if(invalid) issues.push(`Apport ${n}: ${t}`);
+        if(invalid) issues.push({html:true,str:`Apport ${n}: ${highlightInvalid(t)}`});
       }
     });
     if(issues.length){
@@ -215,7 +233,7 @@ function updateApportWarnings(){
       const dt=!isNaN(d)?ddmmyyyy(d):'';
       const info=`<div class="font-semibold">${parties||`Ligne ${i+1}`}</div>`+
                   `<div class="text-xs text-gray-400">${dt?dt+' - ':''}${ord}${ord&&affaire?' / ':''}${affaire}</div>`+
-                  issues.map(it=>`<div class="text-xs break-all">${esc(it)}</div>`).join('');
+                 issues.map(it=>`<div class="text-xs break-all">${it.html?it.str:esc(it.str)}</div>`).join('');
       items.push(`<li class="mb-2">${info}</li>`);
     }
   });
