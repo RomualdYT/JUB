@@ -27,7 +27,7 @@
 
   <div class="mt-6">
     <div class="flex border-b border-gray-600 mb-4">
-      <button data-tab="export" class="tab-btn px-3 py-2 text-sm font-medium border-b-2 border-amber-400 text-amber-300">Export</button>
+      <button data-tab="export" class="tab-btn px-3 py-2 text-sm font-medium border-b-2 border-amber-400 text-amber-300 bg-gray-800/50">Export</button>
       <button data-tab="check" class="tab-btn px-3 py-2 text-sm font-medium border-b-2 border-transparent text-gray-300 hover:text-white">Apports</button>
     </div>
     <div id="tab-export" class="tab-content">
@@ -83,7 +83,8 @@
     <div id="tab-check" class="tab-content hidden">
       <div class="bg-gray-700/70 rounded-lg p-4 shadow-lg">
         <h2 class="text-lg font-semibold mb-2">Lignes avec apports mal formatés</h2>
-        <ul id="invalid-list" class="list-disc pl-5 text-sm space-y-1 text-red-200"></ul>
+        <p id="invalid-summary" class="text-sm mb-2 text-amber-200"></p>
+        <ul id="invalid-list" class="list-disc pl-4 text-sm space-y-2 text-red-200"></ul>
       </div>
     </div>
   </div>
@@ -179,18 +180,38 @@ function updateExportSummary(){
 
 function updateApportWarnings(){
   const list=document.getElementById('invalid-list');
-  if(!list) return;
-  const warnings=[];
+  const summary=document.getElementById('invalid-summary');
+  if(!list||!summary) return;
+
+  const items=[];
+  let count=0;
+  const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+
   store.retained.forEach((r,i)=>{
+    const issues=[];
     [1,2,3].forEach(n=>{
       const val=r[`Apport ${n}`];
-      if(!val) return;
+      if(!val){
+        issues.push(`Apport ${n} manquant`);
+        return;
+      }
       const t=String(val).trim();
       const invalid=!t.startsWith('{"')||!t.endsWith('"}')||/\s"}$/.test(t)||/\.\s+"}/.test(t);
-      if(invalid) warnings.push(`Ligne ${i+1}, Apport ${n}`);
+      if(invalid) issues.push(`Apport ${n}: ${t}`);
     });
+    if(issues.length){
+      count++;
+      const parties=esc(r.Parties||'');
+      const ord=esc(r["Numéro de l'ordonnance"]||'');
+      const affaire=esc(r["Numéro de l'affaire"]||'');
+      const info=`<div class="font-semibold">${parties||`Ligne ${i+1}`}</div>`+
+                  `<div class="text-xs text-gray-400">${ord}${ord&&affaire?' / ':''}${affaire}</div>`+
+                  issues.map(it=>`<div class="text-xs break-all">${esc(it)}</div>`).join('');
+      items.push(`<li class="mb-2">${info}</li>`);
+    }
   });
-  list.innerHTML=warnings.length?warnings.map(w=>`<li>${w}</li>`).join(''):'<li>Aucune anomalie détectée</li>';
+  summary.textContent=count?`${count} ligne${count>1?'s':''} problématique${count>1?'s':''}`:'Aucune anomalie détectée';
+  list.innerHTML=items.length?items.join(''):'<li>Aucune anomalie détectée</li>';
 }
 
 document.querySelectorAll('#export-form input, #export-form select').forEach(e=>{
@@ -203,9 +224,13 @@ document.querySelectorAll('#export-form input, #export-form select').forEach(e=>
 });
 document.querySelectorAll('[data-tab]').forEach(btn=>{
   btn.addEventListener('click',()=>{
-    document.querySelectorAll('[data-tab]').forEach(b=>b.classList.remove('border-amber-400','text-amber-300'));
+    document.querySelectorAll('[data-tab]').forEach(b=>{
+      b.classList.remove('border-amber-400','text-amber-300','bg-gray-800/50');
+      b.classList.add('border-transparent','text-gray-300');
+    });
     document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));
-    btn.classList.add('border-amber-400','text-amber-300');
+    btn.classList.add('border-amber-400','text-amber-300','bg-gray-800/50');
+    btn.classList.remove('border-transparent','text-gray-300');
     document.getElementById('tab-'+btn.dataset.tab).classList.remove('hidden');
   });
 });
