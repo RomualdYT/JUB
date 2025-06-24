@@ -1391,14 +1391,6 @@ function clearComments(hot) {
 import {Document,Packer,Paragraph,TextRun,AlignmentType,ShadingType}
   from 'https://cdn.jsdelivr.net/npm/docx@9.5.0/+esm';
 
-function sanitizeApport(val){
-  if(typeof val!== 'string') return val;
-  let s = val.trim();
-  s = s.replace(/\.\s+"}/g,'."}');
-  s = s.replace(/^\{\s*"?/, '');
-  s = s.replace(/["}]+$/, '');
-  return '{"'+s+'"}';
-}
 
 document.getElementById('export-form').addEventListener('submit',e=>{
   e.preventDefault();
@@ -1446,7 +1438,7 @@ document.getElementById('export-form').addEventListener('submit',e=>{
       const rule=r[`Règle/ Article ${n}`]||r[`Règle/Article  ${n}`]||'';
       const lt  =r[`Legal Text ${n}`]||r[`Legal text ${n}`]||'';
       const subj=r[`Sujet ${n}`]||'';
-      const apport=sanitizeApport(r[`Apport ${n}`]||'');
+      const apport=r[`Apport ${n}`]||'';
       if(!rule&&!lt&&!subj&&!apport) return;
       if(rule) children.push(new Paragraph({alignment:AlignmentType.JUSTIFIED,children:[new TextRun({text:rule,bold:true,font:'Aptos',size:22,noProof:true})]}));
       if(lt)   children.push(new Paragraph({alignment:AlignmentType.JUSTIFIED,children:[new TextRun({text:lt,bold:true,font:'Aptos',size:22,noProof:true})]}));
