@@ -230,16 +230,25 @@ function updateApportWarnings(){
     }
     return esc(str);
   };
+  const highlightSubject = s => {
+    const str = String(s).trim();
+    return str.endsWith('.') ? `${esc(str.slice(0,-1))}<mark>.</mark>` : esc(str);
+  };
 
   store.retained.forEach((r,i)=>{
     const issues=[];
     [1,2,3].forEach(n=>{
       const rule=r[`Règle/ Article ${n}`]||r[`Règle/Article  ${n}`]||'';
       const lt=r[`Legal Text ${n}`]||r[`Legal text ${n}`]||'';
+      const subj=r[`Sujet ${n}`];
       const val=r[`Apport ${n}`];
       if(rule && lt && !val){
         issues.push({html:false,str:`Apport ${n} manquant`});
         return;
+      }
+      if(subj){
+        const s=String(subj).trim();
+        if(/\.$/.test(s)) issues.push({html:true,str:`Sujet ${n}: ${highlightSubject(s)}`});
       }
       if(val){
         const t=String(val).trim();
