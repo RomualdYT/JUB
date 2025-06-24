@@ -41,33 +41,43 @@
       <div>
         <span class="block text-sm font-semibold text-amber-300 mb-2">Période de l’export</span>
         <div class="space-y-2">
-          <div class="flex items-center p-2 rounded hover:bg-gray-800 transition">
-            <input id="mode-all" name="mode" type="radio" value="all" checked class="w-4 h-4 text-amber-400 bg-gray-700 border-gray-600 focus:ring-amber-400 focus:ring-2 rounded">
-            <label for="mode-all" class="ml-2 text-amber-100">Tout le tableau</label>
-          </div>
-          <div class="flex items-center p-2 rounded hover:bg-gray-800 transition">
-            <input id="mode-year" name="mode" type="radio" value="year" class="w-4 h-4 text-amber-400 bg-gray-700 border-gray-600 focus:ring-amber-400 focus:ring-2 rounded">
-            <label for="mode-year" class="ml-2 text-amber-100">Pour l'année</label>
-          </div>
-          <div class="flex items-center p-2 rounded hover:bg-gray-800 transition">
-            <input id="mode-month" name="mode" type="radio" value="month" class="w-4 h-4 text-amber-400 bg-gray-700 border-gray-600 focus:ring-amber-400 focus:ring-2 rounded">
-            <label for="mode-month" class="ml-2 text-amber-100">Pour le mois</label>
-          </div>
-          <div class="flex items-center p-2 rounded hover:bg-gray-800 transition">
-            <input id="mode-id" name="mode" type="radio" value="id" class="w-4 h-4 text-amber-400 bg-gray-700 border-gray-600 focus:ring-amber-400 focus:ring-2 rounded">
-            <label for="mode-id" class="ml-2 text-amber-100">Par numéro</label>
-          </div>
+          <label for="mode-all" class="flex items-center p-2 rounded cursor-pointer hover:bg-gray-800 transition">
+            <input id="mode-all" name="mode" type="radio" value="all" checked class="peer hidden">
+            <span class="w-4 h-4 mr-2 rounded-full border border-gray-500 flex items-center justify-center">
+              <span class="hidden peer-checked:block w-2 h-2 bg-amber-400 rounded-full"></span>
+            </span>
+            <span class="text-amber-100 peer-checked:text-amber-400">Tout le tableau</span>
+          </label>
+          <label for="mode-year" class="flex items-center p-2 rounded cursor-pointer hover:bg-gray-800 transition">
+            <input id="mode-year" name="mode" type="radio" value="year" class="peer hidden">
+            <span class="w-4 h-4 mr-2 rounded-full border border-gray-500 flex items-center justify-center">
+              <span class="hidden peer-checked:block w-2 h-2 bg-amber-400 rounded-full"></span>
+            </span>
+            <span class="text-amber-100 peer-checked:text-amber-400">Pour l'année</span>
+          </label>
+          <label for="mode-month" class="flex items-center p-2 rounded cursor-pointer hover:bg-gray-800 transition">
+            <input id="mode-month" name="mode" type="radio" value="month" class="peer hidden">
+            <span class="w-4 h-4 mr-2 rounded-full border border-gray-500 flex items-center justify-center">
+              <span class="hidden peer-checked:block w-2 h-2 bg-amber-400 rounded-full"></span>
+            </span>
+            <span class="text-amber-100 peer-checked:text-amber-400">Pour le mois</span>
+          </label>
+          <label for="mode-id" class="flex items-center p-2 rounded cursor-pointer hover:bg-gray-800 transition">
+            <input id="mode-id" name="mode" type="radio" value="id" class="peer hidden">
+            <span class="w-4 h-4 mr-2 rounded-full border border-gray-500 flex items-center justify-center">
+              <span class="hidden peer-checked:block w-2 h-2 bg-amber-400 rounded-full"></span>
+            </span>
+            <span class="text-amber-100 peer-checked:text-amber-400">Par numéro</span>
+          </label>
         </div>
       </div>
       <div id="field-year" class="hidden">
         <label for="form-year" class="block text-sm font-semibold text-amber-300 mb-1">Année</label>
-        <input type="text" list="years-list" id="form-year" class="w-full px-3 py-2 bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition placeholder:text-gray-400" placeholder="2025">
-        <datalist id="years-list"></datalist>
+        <select id="form-year" class="w-full px-3 py-2 bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition"></select>
       </div>
       <div id="field-month" class="hidden">
         <label for="form-month" class="block text-sm font-semibold text-amber-300 mb-1">Mois</label>
-        <input type="text" id="form-month" list="months-list" class="w-full px-3 py-2 bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition placeholder:text-gray-400" placeholder="2024-05">
-        <datalist id="months-list"></datalist>
+        <input type="month" id="form-month" class="w-full px-3 py-2 bg-gray-900 border-2 border-gray-700 focus:border-amber-400 text-amber-100 rounded-lg focus:ring-2 focus:ring-amber-400 transition">
       </div>
       <div id="field-id" class="hidden">
         <label for="form-id" class="block text-sm font-semibold text-amber-300 mb-1">Numéro</label>
@@ -150,10 +160,15 @@ function populateExportLists(){
     years.add(d.getFullYear());
     months.add(`${d.getFullYear()}-${pad(d.getMonth()+1)}`);
   });
-  const y=document.getElementById('years-list');
-  y.innerHTML=[...years].sort((a,b)=>b-a).map(v=>`<option value="${v}">`).join('');
-  const m=document.getElementById('months-list');
-  m.innerHTML=[...months].sort().map(v=>`<option value="${v}">`).join('');
+  const yearSelect=document.getElementById('form-year');
+  yearSelect.innerHTML=[...years].sort((a,b)=>b-a)
+    .map(v=>`<option value="${v}">${v}</option>`).join('');
+  const monthInput=document.getElementById('form-month');
+  const mArr=[...months].sort();
+  if(mArr.length){
+    monthInput.min=mArr[0];
+    monthInput.max=mArr[mArr.length-1];
+  }
 }
 
 function updateExportSummary(){
