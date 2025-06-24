@@ -190,22 +190,28 @@ function updateApportWarnings(){
   store.retained.forEach((r,i)=>{
     const issues=[];
     [1,2,3].forEach(n=>{
+      const rule=r[`Règle/ Article ${n}`]||r[`Règle/Article  ${n}`]||'';
+      const lt=r[`Legal Text ${n}`]||r[`Legal text ${n}`]||'';
       const val=r[`Apport ${n}`];
-      if(!val){
+      if(rule && lt && !val){
         issues.push(`Apport ${n} manquant`);
         return;
       }
-      const t=String(val).trim();
-      const invalid=!t.startsWith('{"')||!t.endsWith('"}')||/\s"}$/.test(t)||/\.\s+"}/.test(t);
-      if(invalid) issues.push(`Apport ${n}: ${t}`);
+      if(val){
+        const t=String(val).trim();
+        const invalid=!t.startsWith('{"')||!t.endsWith('"}')||/\s"}$/.test(t)||/\.\s+"}/.test(t);
+        if(invalid) issues.push(`Apport ${n}: ${t}`);
+      }
     });
     if(issues.length){
       count++;
       const parties=esc(r.Parties||'');
       const ord=esc(r["Numéro de l'ordonnance"]||'');
       const affaire=esc(r["Numéro de l'affaire"]||'');
+      const d=parseFrDate(r.Dates)||new Date(r.Dates);
+      const dt=!isNaN(d)?ddmmyyyy(d):'';
       const info=`<div class="font-semibold">${parties||`Ligne ${i+1}`}</div>`+
-                  `<div class="text-xs text-gray-400">${ord}${ord&&affaire?' / ':''}${affaire}</div>`+
+                  `<div class="text-xs text-gray-400">${dt?dt+' - ':''}${ord}${ord&&affaire?' / ':''}${affaire}</div>`+
                   issues.map(it=>`<div class="text-xs break-all">${esc(it)}</div>`).join('');
       items.push(`<li class="mb-2">${info}</li>`);
     }
