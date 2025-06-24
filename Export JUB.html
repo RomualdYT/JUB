@@ -116,11 +116,15 @@ function parseFileRetained(file){
   const fr = new FileReader();
   fr.onerror = () => alert('Erreur : impossible de lire le fichier.');
   fr.onload = e => {
-    const wb = XLSX.read(new Uint8Array(e.target.result), { type:'array', cellDates:true });
+    const wb = XLSX.read(new Uint8Array(e.target.result), { type:'array', cellDates:false });
     const arr = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval:'', raw:true });
     arr.forEach(row => {
       if(row['Dates']){
         let d = row['Dates'];
+        if(typeof d === 'number') {
+          row['Dates'] = XLSX.SSF.format('dd/mm/yyyy', d);
+          return;
+        }
         if(typeof d === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(d)){
           d = parseFrDate(d);
         } else {
