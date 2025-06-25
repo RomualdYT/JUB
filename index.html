@@ -61,6 +61,7 @@ body{background:var(--bg-dark);color:var(--text-dark);font-family:'Inter','Helve
 .ht-search-result{background:var(--highlight-bg)!important;color:var(--highlight-text)!important}
 mark{background:var(--mark-bg);color:var(--mark-text-dark)}
 .light mark{color:inherit}
+.apport-warning{background-color:#fecaca}
 
 /* Global search styles */
 #search-overlay .search-box{backdrop-filter:blur(8px)}
@@ -820,6 +821,7 @@ window.addEventListener('resize', updateTableHeights);
 /* ----------  Recherche, pagination, store  ---------- */
 const store = { main:[], retained:[], excluded:[] };
 const queries = { main:'', retained:'', excluded:'' };
+let apportWarningRows = [];
 
 function attachSearch(hot,input,span,key){
   const plugin = hot.getPlugin('search');
@@ -1065,6 +1067,19 @@ function updateApportWarnings(){
   const summary=document.getElementById('invalid-summary');
   if(!list||!summary) return;
 
+  // Nettoie les surlignages précédents
+  if(hotRetained){
+    for(let r=0;r<hotRetained.countRows();r++){
+      [1,2,3].forEach(n=>{
+        const cA=hdrRet.indexOf(`Apport ${n}`);
+        const cS=hdrRet.indexOf(`Sujet ${n}`);
+        if(cA>=0) hotRetained.removeCellMeta(r,cA,'className');
+        if(cS>=0) hotRetained.removeCellMeta(r,cS,'className');
+      });
+    }
+  }
+  apportWarningRows = [];
+
   const byYear={};
   let count=0;
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
@@ -1087,6 +1102,7 @@ function updateApportWarnings(){
 
   store.retained.forEach((r,i)=>{
     const issues=[];
+    const warnCols=[];
     [1,2,3].forEach(n=>{
       const rule=r[`R\u00e8gle/ Article ${n}`]||r[`R\u00e8gle/Article  ${n}`]||'';
       const lt=r[`Legal Text ${n}`]||r[`Legal text ${n}`]||'';
@@ -1094,19 +1110,33 @@ function updateApportWarnings(){
       const val=r[`Apport ${n}`];
       if(rule && lt && !val){
         issues.push({html:false,str:`Apport ${n} manquant`});
+        warnCols.push(`Apport ${n}`);
         return;
       }
       if(subj){
         const s=String(subj).trim();
-        if(/\.$/.test(s)) issues.push({html:true,str:`Sujet ${n}: ${highlightSubject(s)}`});
+        if(/\.$/.test(s)){
+          issues.push({html:true,str:`Sujet ${n}: ${highlightSubject(s)}`});
+          warnCols.push(`Sujet ${n}`);
+        }
       }
       if(val){
         const t=String(val).trim();
         const invalid=!startRe.test(t)||!endRe.test(t)||/\s["”'’]\}$/.test(t)||/\.\s+["”'’]\}/.test(t);
-        if(invalid) issues.push({html:true,str:`Apport ${n}: ${highlightInvalid(t)}`});
+        if(invalid){
+          issues.push({html:true,str:`Apport ${n}: ${highlightInvalid(t)}`});
+          warnCols.push(`Apport ${n}`);
+        }
       }
     });
     if(issues.length){
+      apportWarningRows.push(i);
+      if(hotRetained){
+        warnCols.forEach(col=>{
+          const idx=hdrRet.indexOf(col);
+          if(idx>=0) hotRetained.setCellMeta(i,idx,'className','apport-warning');
+        });
+      }
       count++;
       const parties=esc(r.Parties||'');
       const ord=esc(r["Num\u00e9ro de l'ordonnance"]||'');
@@ -1131,6 +1161,7 @@ function updateApportWarnings(){
   }else{
     list.innerHTML='<p>Aucune anomalie détectée</p>';
   }
+  hotRetained?.render();
 }
 function applyFlags(hot){
   hot.batch(()=>{
