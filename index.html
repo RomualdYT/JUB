@@ -63,6 +63,14 @@ mark{background:var(--mark-bg);color:var(--mark-text-dark)}
 .light mark{color:inherit}
 .apport-warning{background-color:#fecaca}
 
+/* Kanban board */
+.kanban-board{display:flex;gap:1rem}
+.kanban-column{flex:1;min-width:16rem;background-color:#374151;border-radius:0.5rem;padding:0.5rem}
+.kanban-column h3{font-weight:600;margin-bottom:0.5rem}
+.kanban-card{background-color:#4b5563;color:#fff;padding:0.5rem;border-radius:0.375rem;margin-bottom:0.5rem;cursor:grab}
+.light .kanban-column{background-color:var(--panel-light)}
+.light .kanban-card{background-color:var(--sidebar-active-light);color:var(--text-light)}
+
 /* Global search styles */
 #search-overlay .search-box{backdrop-filter:blur(8px)}
 .light #search-overlay .search-box{background-color:rgba(255,255,255,0.75);color:var(--text-light);border:1px solid rgba(0,0,0,0.1);backdrop-filter:blur(12px)}
@@ -151,6 +159,13 @@ kbd{padding:0.1rem 0.3rem;border-radius:0.25rem;background-color:var(--kbd-bg-da
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
         </svg>
         <span class="ml-2 text-sm font-medium">Décisions exclues</span>
+      </a>
+      <a href="#" data-page="kanban" class="side-link flex items-center w-full h-12 px-3 rounded hover:bg-gray-600 hover:text-white">
+        <!-- Vue Kanban -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h5v16H4zM9.5 4h5v16h-5zM15 4h5v16h-5z"/>
+        </svg>
+        <span class="ml-2 text-sm font-medium">Vue Kanban</span>
       </a>
       <a href="#" data-page="settings" class="side-link flex items-center w-full h-12 px-3 rounded hover:bg-gray-600 hover:text-white">
         <!-- Réglages -->
@@ -317,6 +332,9 @@ kbd{padding:0.1rem 0.3rem;border-radius:0.25rem;background-color:var(--kbd-bg-da
   </div>
   <div id="hot-excluded" class="ht-theme-main-dark w-full" style="height:70vh;z-index:0"></div>
   <div id="pager-excluded" class="pager mt-2 flex items-center gap-4"></div>
+</section>
+<section id="page-kanban" class="hidden p-6">
+  <div id="kanban-board" class="kanban-board space-x-4 overflow-x-auto"></div>
 </section>
 <section id="page-settings" class="hidden p-6 space-y-4">
   <h2 class="text-xl font-semibold text-white">Réglages</h2>
@@ -1062,6 +1080,130 @@ function filterDuplicates(){
 }
 document.getElementById('duplicate-filter')?.addEventListener('input', filterDuplicates);
 
+function buildExcluded(row){
+  return {
+    "Doc JUB?": row["UPC Document"] || "",
+    "Dates": row["Date"] || "",
+    "Parties": row["Parties"] || "",
+    "Numéro de l'affaire": row["Registry"] || "",
+    "Numéro de l'ordonnance": row["Registry"] || "",
+    "Juridiction": row["Court"] || "",
+    "Motif": "",
+    "Lien": row["UPC Document"] || ""
+  };
+}
+function buildRetained(row){
+  return {
+    "Dates": row["Date"] || "",
+    "Parties": row["Parties"] || "",
+    "Juridiction": row["Court"] || "",
+    "Numéro de l'affaire": row["Registry"] || "",
+    "Numéro de l'ordonnance": row["Registry"] || "",
+    "Sujet 1": "",
+    "Règle/ Article 1": "",
+    "Legal Text 1": "",
+    "Apport 1": "",
+    "Sujet 2": "",
+    "Règle/ Article 2": "",
+    "Legal text 2": "",
+    "Apport 2": "",
+    "Sujet 3": "",
+    "Règle/Article  3": "",
+    "Legal text 3": "",
+    "Apport 3": "",
+    "Lien": row["UPC Document"] || "",
+    "Langue": "",
+    "Traduction": ""
+  };
+}
+
+function sortRetained(){
+  store.retained.sort((a,b)=>{
+    const parse=d=>{ if(!d) return new Date(0); if(/^\d{2}\/\d{2}\/\d{4}$/.test(d)){const [j,m,y]=d.split('/'); return new Date(`${y}-${m}-${j}`);} return new Date(d); };
+    return parse(b["Dates"]) - parse(a["Dates"]);
+  });
+}
+function sortExcluded(){
+  store.excluded.sort((a,b)=>{
+    const parse=d=>{ if(!d) return new Date(0); if(/^\d{1,2} [a-zéû]+ \d{4}$/i.test(d)){const [j,m,y]=d.split(' '); const mois=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"].indexOf(m.toLowerCase()); return new Date(y,mois,j);} if(/^\d{2}\/\d{2}\/\d{4}$/.test(d)){const [j2,m2,y2]=d.split('/'); return new Date(`${y2}-${m2}-${j2}`);} return new Date(d); };
+    return parse(b["Dates"]) - parse(a["Dates"]);
+  });
+}
+
+function removeMatching(tbl,row){
+  const ids=String(row.Registry||'').trim();
+  const arr=store[tbl];
+  for(let i=0;i<arr.length;i++){
+    const val=`${arr[i]["Numéro de l'affaire"]} ${arr[i]["Numéro de l'ordonnance"]}`.trim();
+    if(val===ids){ arr.splice(i,1); return; }
+  }
+}
+
+function moveDecision(idx,target){
+  const row=store.main[idx];
+  if(!row) return;
+  if(row._flag==='retained') removeMatching('retained',row);
+  if(row._flag==='excluded') removeMatching('excluded',row);
+  if(target==='retained'){
+    store.retained.push(buildRetained(row));
+    sortRetained();
+    loadTable('retained',store.retained);
+    showToast('Décision intégrée au tableau Retenues.','success');
+  }else if(target==='excluded'){
+    store.excluded.push(buildExcluded(row));
+    sortExcluded();
+    loadTable('excluded',store.excluded);
+    showToast('Décision exclue et ajoutée au tableau Exclues.','success');
+  }else{
+    loadTable('retained',store.retained);
+    loadTable('excluded',store.excluded);
+  }
+  computeFlags();
+  applyFlags(hotMain);
+  updateKanban();
+}
+
+function createCard(row,idx){
+  const card=document.createElement('div');
+  card.className='kanban-card';
+  card.draggable=true;
+  card.textContent=`${row.Parties||''}`;
+  card.title=`${row.Date||''} - ${row.Registry||''}`;
+  card.dataset.index=idx;
+  card.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',idx);});
+  return card;
+}
+
+function updateKanban(){
+  const m=document.getElementById('kanban-main');
+  const r=document.getElementById('kanban-retained');
+  const e=document.getElementById('kanban-excluded');
+  if(!m||!r||!e) return;
+  m.innerHTML=''; r.innerHTML=''; e.innerHTML='';
+  store.main.forEach((row,i)=>{
+    const target=row._flag==='retained'?r:row._flag==='excluded'?e:m;
+    target.appendChild(createCard(row,i));
+  });
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const board=document.getElementById('kanban-board');
+  if(!board) return;
+  board.innerHTML=`
+    <div class="kanban-column" data-target="none"><h3 class="text-gray-200">À examiner</h3><div id="kanban-main"></div></div>
+    <div class="kanban-column" data-target="retained"><h3 class="text-gray-200">Retenues</h3><div id="kanban-retained"></div></div>
+    <div class="kanban-column" data-target="excluded"><h3 class="text-gray-200">Exclues</h3><div id="kanban-excluded"></div></div>`;
+  board.querySelectorAll('.kanban-column').forEach(col=>{
+    col.addEventListener('dragover',ev=>ev.preventDefault());
+    col.addEventListener('drop',ev=>{
+      ev.preventDefault();
+      const idx=parseInt(ev.dataTransfer.getData('text/plain'),10);
+      moveDecision(idx,col.dataset.target);
+    });
+  });
+  updateKanban();
+});
+
 function updateApportWarnings(){
   const list=document.getElementById('invalid-list');
   const summary=document.getElementById('invalid-summary');
@@ -1225,6 +1367,7 @@ function loadTable(tbl,rows){
     updateExportSummary();
     updateApportWarnings();
   }
+  updateKanban();
 }
 function parseFile(file, tbl) {
   const fr = new FileReader();
