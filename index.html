@@ -330,6 +330,11 @@ kbd{padding:0.1rem 0.3rem;border-radius:0.25rem;background-color:var(--kbd-bg-da
       <ul id="duplicate-list" class="text-gray-200 text-sm grid grid-cols-1 sm:grid-cols-2 gap-x-4 list-disc list-inside"></ul>
     </div>
   </div>
+  <div class="bg-gray-700 p-4 rounded shadow space-y-2">
+    <h3 class="text-lg font-medium text-white">Apports mal formatés</h3>
+    <p id="invalid-summary" class="text-sm text-amber-200"></p>
+    <div id="invalid-list" class="space-y-2 text-sm text-red-200"></div>
+  </div>
 </section>
 
 </main>
@@ -437,6 +442,7 @@ themeBtn.addEventListener('click',()=>{
 document.addEventListener('DOMContentLoaded',()=>{
   applyTheme(localStorage.getItem('theme')||'dark');
   computeDuplicates();
+  updateApportWarnings();
 });
 /* ----------  Drawer  ---------- */
 const exportBtn = document.querySelector('[data-drawer-target="drawer-export"]');
@@ -1053,6 +1059,79 @@ function filterDuplicates(){
   });
 }
 document.getElementById('duplicate-filter')?.addEventListener('input', filterDuplicates);
+
+function updateApportWarnings(){
+  const list=document.getElementById('invalid-list');
+  const summary=document.getElementById('invalid-summary');
+  if(!list||!summary) return;
+
+  const byYear={};
+  let count=0;
+  const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+  const startRe=/^\{["“'’]/;
+  const endRe=/["”'’]\}$/;
+  const highlightInvalid=t=>{
+    const str=String(t);
+    if(!startRe.test(str)) return `<mark>${esc(str.slice(0,2))}</mark>${esc(str.slice(2))}`;
+    if(!endRe.test(str)) return `${esc(str.slice(0,-2))}<mark>${esc(str.slice(-2))}</mark>`;
+    let m=str.match(/\s+(?=["”'’]\}$)/);
+    if(m) return `${esc(str.slice(0,m.index))}<mark>${esc(m[0])}</mark>${esc(str.slice(m.index+m[0].length))}`;
+    m=str.match(/\.\s+["”'’]\}$/);
+    if(m) return `${esc(str.slice(0,m.index+1))}<mark>${esc(m[0].slice(1,-2))}</mark>${esc(str.slice(m.index+m[0].length))}`;
+    return esc(str);
+  };
+  const highlightSubject=s=>{
+    const str=String(s).trim();
+    return str.endsWith('.') ? `${esc(str.slice(0,-1))}<mark>.</mark>` : esc(str);
+  };
+
+  store.retained.forEach((r,i)=>{
+    const issues=[];
+    [1,2,3].forEach(n=>{
+      const rule=r[`R\u00e8gle/ Article ${n}`]||r[`R\u00e8gle/Article  ${n}`]||'';
+      const lt=r[`Legal Text ${n}`]||r[`Legal text ${n}`]||'';
+      const subj=r[`Sujet ${n}`];
+      const val=r[`Apport ${n}`];
+      if(rule && lt && !val){
+        issues.push({html:false,str:`Apport ${n} manquant`});
+        return;
+      }
+      if(subj){
+        const s=String(subj).trim();
+        if(/\.$/.test(s)) issues.push({html:true,str:`Sujet ${n}: ${highlightSubject(s)}`});
+      }
+      if(val){
+        const t=String(val).trim();
+        const invalid=!startRe.test(t)||!endRe.test(t)||/\s["”'’]\}$/.test(t)||/\.\s+["”'’]\}/.test(t);
+        if(invalid) issues.push({html:true,str:`Apport ${n}: ${highlightInvalid(t)}`});
+      }
+    });
+    if(issues.length){
+      count++;
+      const parties=esc(r.Parties||'');
+      const ord=esc(r["Num\u00e9ro de l'ordonnance"]||'');
+      const affaire=esc(r["Num\u00e9ro de l'affaire"]||'');
+      const d=parseFrDate(r.Dates)||new Date(r.Dates);
+      const dt=!isNaN(d)?ddmmyyyy(d):'';
+      const y=!isNaN(d)?d.getFullYear():'';
+      const info=`<div class="font-semibold">${parties||`Ligne ${i+1}`}</div>`+
+                  `<div class="text-xs text-gray-400">${dt?dt+' - ':''}${ord}${ord&&affaire?' / ':''}${affaire}</div>`+
+                 issues.map(it=>`<div class="text-xs break-all">${it.html?it.str:esc(it.str)}</div>`).join('');
+      if(!byYear[y]) byYear[y]=[];
+      byYear[y].push(`<li class=\"mb-1\">${info}</li>`);
+    }
+  });
+  summary.textContent=count?`${count} ligne${count>1?'s':''} problématique${count>1?'s':''}`:'Aucune anomalie détectée';
+  const years=Object.keys(byYear).filter(y=>y).sort((a,b)=>b-a);
+  if(years.length){
+    list.innerHTML=years.map(y=>
+      `<details><summary class=\"cursor-pointer\">${y} (${byYear[y].length})</summary>`+
+      `<ul class=\"list-disc pl-4 mt-1 space-y-1\">${byYear[y].join('')}</ul></details>`
+    ).join('');
+  }else{
+    list.innerHTML='<p>Aucune anomalie détectée</p>';
+  }
+}
 function applyFlags(hot){
   hot.batch(()=>{
     for(let r=0;r<hot.countRows();r++){
@@ -1113,6 +1192,7 @@ function loadTable(tbl,rows){
   if(tbl==='retained') {
     populateExportLists();
     updateExportSummary();
+    updateApportWarnings();
   }
 }
 function parseFile(file, tbl) {
